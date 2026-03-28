@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>MediaSosial - InstaClone</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* ========== STYLE TIDAK BERUBAH ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+        }
+        body { background-color: #fafafa; }
+        .app-container { display: flex; min-height: 100vh; }
+        .sidebar {
+            width: 260px;
+            background-color: #ffffff;
+            border-right: 1px solid #dbdbdb;
+            position: fixed;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+            z-index: 10;
+        }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding-left: 0.5rem; }
+        .logo i { font-size: 1.8rem; color: #262626; }
+        .logo h1 { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.5px; }
+        .nav-items { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-weight: 500;
+            color: #262626;
+        }
+        .nav-item i { font-size: 1.5rem; width: 28px; }
+        .nav-item:hover { background-color: #f2f2f2; }
+        .nav-item.active { background-color: #efefef; font-weight: 600; }
+        .logout-btn { margin-top: auto; color: #ed4956; }
+        .user-mini { padding: 12px 16px; border-top: 1px solid #dbdbdb; margin-top: 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; }
+        .main-content { flex: 1; margin-left: 260px; padding: 1.5rem 2rem; max-width: calc(100% - 260px); }
+        .search-header {
+            background: white;
+            border-radius: 24px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #dbdbdb;
+            display: flex;
+            align-items: center;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            background: #f2f2f2;
+            padding: 8px 16px;
+            border-radius: 24px;
+        }
+        .search-box i { color: #8e8e8e; }
+        .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.95rem; }
+        .feed-container, .profile-container, .chat-container, .search-results { max-width: 630px; margin: 0 auto; }
+        .post-card {
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .post-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+        .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+        .post-username { font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        .post-time { font-size: 0.7rem; color: #8e8e8e; margin-left: auto; }
+        .post-media { width: 100%; max-height: 500px; object-fit: contain; background: #000; }
+        .post-caption { padding: 12px 16px; font-size: 0.9rem; }
+        .post-actions { display: flex; gap: 20px; padding: 8px 16px; border-top: 1px solid #efefef; }
+        .action-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #262626; }
+        .liked { color: #ed4956; }
+        .comments-section { padding: 8px 16px 16px; border-top: 1px solid #efefef; }
+        .comment-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; }
+        .comment-username { font-weight: 600; cursor: pointer; margin-right: 8px; }
+        .comment-text { flex: 1; }
+        .comment-actions button { background: none; border: none; margin-left: 8px; cursor: pointer; font-size: 0.7rem; color: #8e8e8e; }
+        .add-comment { display: flex; gap: 8px; margin-top: 10px; }
+        .add-comment input { flex: 1; border: none; padding: 8px 0; outline: none; font-size: 0.85rem; }
+        .delete-post { margin-left: auto; background: none; border: none; color: #ed4956; cursor: pointer; }
+        .profile-header {
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 12px;
+            padding: 2rem;
+            display: flex;
+            gap: 3rem;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        .profile-avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
+        .profile-info h2 { font-size: 1.5rem; }
+        .profile-stats { display: flex; gap: 2rem; margin: 1rem 0; }
+        .stat { text-align: center; }
+        .stat-number { font-weight: 700; }
+        .bio { margin-top: 0.5rem; color: #262626; }
+        .edit-profile-btn, .follow-btn, .chat-btn, .create-post-btn {
+            background: #0095f6;
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            margin-right: 8px;
+        }
+        .follow-btn.following { background: #efefef; color: #262626; }
+        .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .post-thumb { aspect-ratio: 1 / 1; object-fit: cover; width: 100%; cursor: pointer; }
+        .chat-room {
+            background: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 12px;
+            height: 70vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+        .message {
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 18px;
+            background: #efefef;
+            align-self: flex-start;
+            position: relative;
+            word-break: break-word;
+        }
+        .message.own {
+            background: #0095f6;
+            color: white;
+            align-self: flex-end;
+        }
+        .message .delete-msg {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .message:hover .delete-msg {
+            opacity: 1;
+        }
+        .chat-input { display: flex; border-top: 1px solid #dbdbdb; padding: 12px; gap: 8px; }
+        .chat-input input { flex: 1; border: none; outline: none; padding: 8px; }
+        .chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #dbdbdb;
+        }
+        .delete-chat-btn {
+            background: #ed4956;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            width: 90%;
+            max-width: 400px;
+        }
+        .crop-container canvas { width: 100%; height: auto; }
+        button { background: #0095f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+        input, textarea { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #dbdbdb; border-radius: 6px; }
+        .story-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .story-content { max-width: 90%; max-height: 90%; }
+        .story-content img, .story-content video { max-width: 100%; max-height: 90vh; object-fit: contain; }
+        .close-story { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; }
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fafafa; }
+        .auth-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        .auth-card h2 { margin-bottom: 1.5rem; }
+        .auth-card input { margin-bottom: 1rem; }
+        .auth-card button { width: 100%; margin-top: 0.5rem; }
+        .auth-switch { margin-top: 1rem; color: #0095f6; cursor: pointer; }
+        .search-results-list {
+            background: white;
+            border-radius: 12px;
+            margin-top: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .search-result-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #efefef;
+        }
+        .search-result-item:hover { background: #f9f9f9; }
+        @media (max-width: 740px) {
+            .sidebar { width: 80px; padding: 1rem 0.5rem; }
+            .sidebar span { display: none; }
+            .main-content { margin-left: 80px; max-width: calc(100% - 80px); }
+            .logo h1 { display: none; }
+            .profile-header { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+    // ========== DATA STORAGE ==========
+    let currentUser = null;
+    let users = JSON.parse(localStorage.getItem('social_users')) || [];
+    let posts = JSON.parse(localStorage.getItem('social_posts')) || [];
+    let stories = JSON.parse(localStorage.getItem('social_stories')) || [];
+    let chats = JSON.parse(localStorage.getItem('social_chats')) || {};
+
+    function saveData() {
+        localStorage.setItem('social_users', JSON.stringify(users));
+        localStorage.setItem('social_posts', JSON.stringify(posts));
+        localStorage.setItem('social_stories', JSON.stringify(stories));
+        localStorage.setItem('social_chats', JSON.stringify(chats));
+    }
+
+    function getRandomAvatar() {
+        return `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/200/200`;
+    }
+
+    // Inisialisasi demo user jika kosong
+    if(users.length === 0) {
+        users.push({ id: '1', username: 'johndoe', password: '123', bio: 'Halo dunia!', avatar: getRandomAvatar(), followers: [], following: [] });
+        users.push({ id: '2', username: 'janedoe', password: '123', bio: 'Photography lover', avatar: getRandomAvatar(), followers: [], following: [] });
+        saveData();
+    }
+
+    // Bersihkan story >24 jam
+    function cleanStories() {
+        const now = Date.now();
+        const filtered = stories.filter(s => (now - s.timestamp) < 24*60*60*1000);
+        if(filtered.length !== stories.length) {
+            stories = filtered;
+            saveData();
+            refreshUI();
+        }
+    }
+    setInterval(cleanStories, 60*60*1000);
+    cleanStories();
+
+    // ========== CROP IMAGE ==========
+    let cropCallback = null;
+    function cropImage(file, callback) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.getElementById('cropCanvas');
+                const ctx = canvas.getContext('2d');
+                const size = Math.min(img.width, img.height);
+                const sx = (img.width - size)/2;
+                const sy = (img.height - size)/2;
+                canvas.width = 300; canvas.height = 300;
+                ctx.drawImage(img, sx, sy, size, size, 0, 0, 300, 300);
+                document.getElementById('cropModal').style.display = 'flex';
+                cropCallback = () => {
+                    const dataUrl = canvas.toDataURL('image/jpeg');
+                    callback(dataUrl);
+                    document.getElementById('cropModal').style.display = 'none';
+                };
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ========== STORY VIEWER ==========
+    function viewStory(story) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'story-viewer';
+        modalDiv.innerHTML = `
+            <div class="close-story"><i class="fas fa-times"></i></div>
+            <div class="story-content">
+                ${story.mediaType === 'video' ? `<video controls autoplay src="${story.mediaUrl}"></video>` : `<img src="${story.mediaUrl}">`}
+            </div>
+        `;
+        document.body.appendChild(modalDiv);
+        modalDiv.querySelector('.close-story').onclick = () => modalDiv.remove();
+        modalDiv.onclick = (e) => { if(e.target === modalDiv) modalDiv.remove(); };
+    }
+
+    // ========== FUNGSI REFRESH UI OTOMATIS ==========
+    function refreshUI() {
+        if (currentUser && document.getElementById('viewContainer')) {
+            renderCurrentView();
+        }
+    }
+
+    // ========== RENDER ENGINE ==========
+    let currentView = 'beranda';
+    let selectedChatUserId = null;
+    let searchQuery = '';
+    let showSearchResults = false;
+
+    // Auth Dashboard
+    function showAuthDashboard() {
+        const app = document.getElementById('app');
+        app.innerHTML = `
+            <div class="auth-container">
+                <div class="auth-card">
+                    <h2><i class="fab fa-instagram"></i> MediaSosial</h2>
+                    <div id="authForm">
+                        <input type="text" id="authUsername" placeholder="Username">
+                        <input type="password" id="authPassword" placeholder="Password">
+                        <button id="loginBtn">Login</button>
+                        <div class="auth-switch" id="switchToRegister">Belum punya akun? Daftar</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.getElementById('loginBtn').onclick = () => {
+            const username = document.getElementById('authUsername').value;
+            const password = document.getElementById('authPassword').value;
+            const user = users.find(u => u.username === username && u.password === password);
+            if(user) {
+                currentUser = user;
+                localStorage.setItem('social_current', JSON.stringify({id: user.id}));
+                renderMainApp();
+            } else {
+                alert('Username atau password salah');
+            }
+        };
+        document.getElementById('switchToRegister').onclick = () => {
+            document.getElementById('authForm').innerHTML = `
+                <input type="text" id="regUsername" placeholder="Username">
+                <input type="password" id="regPassword" placeholder="Password">
+                <button id="registerBtn">Daftar</button>
+                <div class="auth-switch" id="switchToLogin">Sudah punya akun? Login</div>
+            `;
+            document.getElementById('registerBtn').onclick = () => {
+                const username = document.getElementById('regUsername').value;
+                const password = document.getElementById('regPassword').value;
+                if(username && password && !users.find(u => u.username === username)) {
+                    const newUser = { id: Date.now().toString(), username, password, bio: '', avatar: getRandomAvatar(), followers: [], following: [] };
+                    users.push(newUser);
+                    saveData();
+                    alert('Akun berhasil dibuat! Silakan login.');
+                    showAuthDashboard();
+                } else {
+                    alert('Username tidak valid atau sudah terdaftar');
+                }
+            };
+            document.getElementById('switchToLogin').onclick = () => showAuthDashboard();
+        };
+    }
+
+    function renderMainApp() {
+        const app = document.getElementById('app');
+        app.innerHTML = `
+            <div class="app-container">
+                <nav class="sidebar">
+                    <div class="logo"><i class="fab fa-instagram"></i><h1>MediaSosial</h1></div>
+                    <div class="nav-items">
+                        <div class="nav-item" data-nav="beranda"><i class="fas fa-home"></i><span>Beranda</span></div>
+                        <div class="nav-item" data-nav="profile"><i class="fas fa-user-circle"></i><span>Profile</span></div>
+                        <div class="nav-item" data-nav="chat"><i class="fas fa-comment-dots"></i><span>Chat</span></div>
+                        <div class="nav-item logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
+                    </div>
+                    <div class="user-mini" id="userMini"></div>
+                </nav>
+                <main class="main-content">
+                    <div class="search-header">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Cari akun lain...">
+                        </div>
+                    </div>
+                    <div id="viewContainer"></div>
+                </main>
+            </div>
+            <!-- Modals -->
+            <div id="cropModal" class="modal"><div class="modal-content"><h3>Crop Foto Profil (1:1)</h3><div class="crop-container"><canvas id="cropCanvas" width="300" height="300"></canvas></div><div class="modal-buttons"><button id="confirmCropBtn">Terapkan</button><button id="cancelCropBtn">Batal</button></div></div></div>
+            <div id="postModal" class="modal"><div class="modal-content"><h3>Buat Postingan</h3><input type="text" id="postCaption" placeholder="Caption..."><input type="file" id="postMedia" accept="image/*,video/*"><div id="mediaPreview"></div><button id="submitPostBtn">Upload</button></div></div>
+            <div id="storyModal" class="modal"><div class="modal-content"><h3>Upload Story (24 jam)</h3><input type="file" id="storyMedia" accept="image/*,video/*"><button id="submitStoryBtn">Upload</button></div></div>
+            <div id="editProfileModal" class="modal"><div class="modal-content"><h3>Edit Profil</h3><label>Username</label><input type="text" id="editUsername"><label>Bio</label><textarea id="editBio" rows="3"></textarea><label>Foto Profil</label><input type="file" id="profilePictureInput" accept="image/*"><div class="modal-buttons"><button id="saveProfileBtn">Simpan</button><button id="cancelEditProfileBtn">Batal</button></div></div></div>
+        `;
+        document.getElementById('userMini').innerHTML = `<i class="fas fa-user-circle"></i> <span>${currentUser.username}</span>`;
+        document.getElementById('logoutBtn').onclick = () => { currentUser = null; localStorage.removeItem('social_current'); showAuthDashboard(); };
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            if(btn.getAttribute('data-nav')) {
+                btn.onclick = () => { currentView = btn.getAttribute('data-nav'); renderCurrentView(); updateNavActive(); };
+            }
+        });
+        document.getElementById('confirmCropBtn').onclick = () => cropCallback && cropCallback();
+        document.getElementById('cancelCropBtn').onclick = () => document.getElementById('cropModal').style.display = 'none';
+        document.getElementById('submitPostBtn').onclick = () => {
+            const file = document.getElementById('postMedia').files[0];
+            const caption = document.getElementById('postCaption').value;
+            if(file) uploadPost(file, caption);
+            document.getElementById('postModal').style.display = 'none';
+        };
+        document.getElementById('submitStoryBtn').onclick = () => {
+            const file = document.getElementById('storyMedia').files[0];
+            if(file) uploadStory(file);
+            document.getElementById('storyModal').style.display = 'none';
+        };
+        // SEARCH: sekarang berfungsi di semua halaman
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (query === '') {
+                showSearchResults = false;
+                renderCurrentView();
+                return;
+            }
+            const results = users.filter(u => u.username.toLowerCase().includes(query) && u.id !== currentUser.id);
+            const container = document.getElementById('viewContainer');
+            // Tampilkan hasil pencarian di container, terlepas dari view saat ini
+            container.innerHTML = `
+                <div class="search-results-list">
+                    <h3>Hasil pencarian untuk "${e.target.value}"</h3>
+                    ${results.map(u => `
+                        <div class="search-result-item" onclick="handleSearchResultClick('${u.id}')">
+                            <img src="${u.avatar}" width="40" style="border-radius:50%">
+                            <span>${u.username}</span>
+                        </div>
+                    `).join('')}
+                    ${results.length === 0 ? '<div class="search-result-item">Tidak ditemukan</div>' : ''}
+                </div>
+            `;
+            showSearchResults = true;
+        });
+        updateNavActive();
+        renderCurrentView();
+    }
+
+    // Fungsi untuk menangani klik hasil pencarian
+    window.handleSearchResultClick = (userId) => {
+        if (currentView === 'chat') {
+            // Jika di halaman chat, langsung buka chat dengan user tersebut
+            selectedChatUserId = userId;
+            currentView = 'chatRoom';
+            renderCurrentView();
+        } else {
+            // Selain chat, buka profil user
+            viewProfile(userId);
+        }
+        // Bersihkan input pencarian
+        document.getElementById('searchInput').value = '';
+        showSearchResults = false;
+    };
+
+    function updateNavActive() {
+        document.querySelectorAll('.nav-item').forEach(el => {
+            if(el.getAttribute('data-nav') === currentView) el.classList.add('active');
+            else el.classList.remove('active');
+        });
+    }
+
+    function renderCurrentView() {
+        if (showSearchResults) return; // sudah ditampilkan hasil pencarian
+        const container = document.getElementById('viewContainer');
+        if(!container) return;
+        if(currentView === 'beranda') renderFeed(container);
+        else if(currentView === 'profile') renderProfile(container, currentUser.id);
+        else if(currentView === 'chat') renderChatList(container);
+        else if(currentView === 'chatRoom') renderChatRoom(container);
+    }
+
+    function renderFeed(container) {
+        let feedPosts = [...posts].filter(p => {
+            const postOwner = users.find(u=> u.id === p.userId);
+            return currentUser.following.includes(p.userId) || p.userId === currentUser.id;
+        }).sort((a,b)=>b.timestamp - a.timestamp);
+        
+        let availableStories = stories.filter(s => s.userId !== currentUser.id);
+        let storyUsers = [];
+        for(let s of availableStories) {
+            if(!storyUsers.find(u => u.id === s.userId)) {
+                let user = users.find(u => u.id === s.userId);
+                if(user) storyUsers.push(user);
+            }
+        }
+        
+        let html = `<div class="feed-container"><div style="display:flex; gap:16px; overflow-x:auto; margin-bottom:24px; padding-bottom:8px;">`;
+        storyUsers.forEach(u => {
+            html += `<div style="text-align:center; cursor:pointer;" onclick="viewStoryById('${u.id}')"><img src="${u.avatar}" style="width:60px; height:60px; border-radius:50%; border:2px solid #c32aa3; object-fit:cover;"><div style="font-size:12px">${u.username}</div></div>`;
+        });
+        html += `<div style="text-align:center; cursor:pointer;" onclick="document.getElementById('storyModal').style.display='flex'"><i class="fas fa-plus-circle fa-2x" style="color:#0095f6;"></i><div>Story</div></div></div>`;
+        html += `<button id="createPostBtn" style="margin-bottom:16px; background:#0095f6;">+ Postingan Baru</button>`;
+        if(feedPosts.length===0) html+= `<div class="post-card" style="padding:2rem; text-align:center">Belum ada postingan. Ikuti akun lain atau buat postingan.</div>`;
+        feedPosts.forEach(post => {
+            const owner = users.find(u=> u.id === post.userId);
+            const isLiked = post.likes.includes(currentUser.id);
+            html += `<div class="post-card" data-postid="${post.id}">
+                <div class="post-header"><img class="post-avatar" src="${owner.avatar}" onclick="viewProfile('${owner.id}')"><span class="post-username" onclick="viewProfile('${owner.id}')">${owner.username}</span><span class="post-time">${new Date(post.timestamp).toLocaleString()}</span>${post.userId===currentUser.id ? `<button class="delete-post" onclick="deletePost('${post.id}')"><i class="fas fa-trash"></i></button>` : ''}</div>
+                ${post.mediaType === 'video' ? `<video controls class="post-media" src="${post.mediaUrl}"></video>` : `<img class="post-media" src="${post.mediaUrl}">`}
+                <div class="post-caption"><strong>${owner.username}</strong> ${post.caption}</div>
+                <div class="post-actions"><button class="action-btn like-btn" data-postid="${post.id}"><i class="fas fa-heart"></i> <span class="like-count">${post.likes.length}</span></button><button class="action-btn comment-toggle" data-postid="${post.id}"><i class="fas fa-comment"></i> ${post.comments.length}</button></div>
+                <div class="comments-section" id="comments-${post.id}" style="display:none;"><div id="commentsList-${post.id}">${post.comments.map(c => `<div class="comment-item" data-commentid="${c.id}"><div><span class="comment-username" onclick="viewProfile('${c.userId}')">${users.find(u=>u.id===c.userId)?.username}</span><span class="comment-text">${c.text}</span></div>${c.userId===currentUser.id ? `<div class="comment-actions"><button onclick="editComment('${post.id}','${c.id}')">edit</button><button onclick="deleteComment('${post.id}','${c.id}')">hapus</button></div>` : ''}</div>`).join('')}</div><div class="add-comment"><input type="text" placeholder="Tambah komentar..." id="commentInput-${post.id}"><button onclick="addComment('${post.id}')">Kirim</button></div></div>
+            </div>`;
+        });
+        container.innerHTML = html;
+        document.getElementById('createPostBtn')?.addEventListener('click',()=>document.getElementById('postModal').style.display='flex');
+        document.querySelectorAll('.like-btn').forEach(btn=> btn.addEventListener('click',(e)=> likePost(btn.dataset.postid)));
+        document.querySelectorAll('.comment-toggle').forEach(btn=> btn.addEventListener('click',()=>{ let div=document.getElementById(`comments-${btn.dataset.postid}`); div.style.display = div.style.display==='none'?'block':'none';}));
+    }
+
+    window.viewStoryById = (userId) => {
+        const userStory = stories.filter(s => s.userId === userId);
+        if(userStory.length === 0) return;
+        const story = userStory[0];
+        viewStory(story);
+    };
+
+    window.viewProfile = (userId) => { currentView = 'profile'; renderMainApp(); setTimeout(()=>renderProfile(document.getElementById('viewContainer'), userId),0); };
+    
+    function renderProfile(container, userId) {
+        let profileUser = users.find(u=> u.id === userId);
+        if(!profileUser) return;
+        let userPosts = posts.filter(p=> p.userId === userId);
+        let isOwn = profileUser.id === currentUser.id;
+        let isFollowing = currentUser.following.includes(profileUser.id);
+        container.innerHTML = `<div class="profile-container"><div class="profile-header"><img class="profile-avatar" src="${profileUser.avatar}"><div class="profile-info"><h2>${profileUser.username} ${isOwn ? '<button class="edit-profile-btn" id="editProfileBtn">Edit Profil</button> <button class="create-post-btn" id="createPostProfileBtn">+ Postingan</button>' : `<button class="follow-btn ${isFollowing ? 'following' : ''}" id="followBtn">${isFollowing ? 'Following' : 'Follow'}</button> <button class="chat-btn" id="chatDirectBtn">Chat</button>`}</h2><div class="profile-stats"><div class="stat"><div class="stat-number">${userPosts.length}</div><div>Postingan</div></div><div class="stat"><div class="stat-number">${profileUser.followers.length}</div><div>Followers</div></div><div class="stat"><div class="stat-number">${profileUser.following.length}</div><div>Following</div></div></div><div class="bio">${profileUser.bio || 'Tidak ada bio'}</div></div></div><div class="post-grid" id="profilePostGrid"></div></div>`;
+        const grid = document.getElementById('profilePostGrid');
+        userPosts.forEach(p => { let el = document.createElement('img'); el.src = p.mediaUrl; el.className='post-thumb'; el.onclick=()=>alert(`Caption: ${p.caption}`); grid.appendChild(el); });
+        if(isOwn) {
+            document.getElementById('editProfileBtn')?.addEventListener('click', ()=>openEditProfileModal());
+            document.getElementById('createPostProfileBtn')?.addEventListener('click', ()=>document.getElementById('postModal').style.display='flex');
+        }
+        if(!isOwn) {
+            document.getElementById('followBtn')?.addEventListener('click',()=>toggleFollow(profileUser.id));
+            document.getElementById('chatDirectBtn')?.addEventListener('click',()=>{ selectedChatUserId = profileUser.id; currentView = 'chatRoom'; renderCurrentView(); });
+        }
+    }
+
+    function openEditProfileModal() {
+        document.getElementById('editUsername').value = currentUser.username;
+        document.getElementById('editBio').value = currentUser.bio || '';
+        document.getElementById('editProfileModal').style.display = 'flex';
+        document.getElementById('profilePictureInput').onchange = (e) => { if(e.target.files[0]) cropImage(e.target.files[0], (cropped)=>{ currentUser.avatar = cropped; saveData(); renderMainApp(); }); };
+        document.getElementById('saveProfileBtn').onclick = () => {
+            let newUsername = document.getElementById('editUsername').value.trim();
+            if(newUsername && !users.some(u=> u.username === newUsername && u.id !== currentUser.id)) currentUser.username = newUsername;
+            currentUser.bio = document.getElementById('editBio').value;
+            saveData();
+            document.getElementById('editProfileModal').style.display = 'none';
+            renderMainApp();
+        };
+        document.getElementById('cancelEditProfileBtn').onclick = ()=> document.getElementById('editProfileModal').style.display = 'none';
+    }
+
+    function toggleFollow(targetId) {
+        if(currentUser.following.includes(targetId)) {
+            currentUser.following = currentUser.following.filter(id=> id !== targetId);
+            let target = users.find(u=> u.id === targetId);
+            target.followers = target.followers.filter(id=> id !== currentUser.id);
+        } else {
+            currentUser.following.push(targetId);
+            let target = users.find(u=> u.id === targetId);
+            target.followers.push(currentUser.id);
+        }
+        saveData();
+        renderMainApp();
+    }
+
+    function likePost(postId) {
+        let post = posts.find(p=> p.id === postId);
+        if(post.likes.includes(currentUser.id)) post.likes = post.likes.filter(id=> id !== currentUser.id);
+        else post.likes.push(currentUser.id);
+        saveData();
+        refreshUI();
+    }
+
+    window.addComment = (postId) => {
+        let input = document.getElementById(`commentInput-${postId}`);
+        let text = input.value.trim();
+        if(!text) return;
+        let post = posts.find(p=> p.id === postId);
+        post.comments.push({ id: Date.now().toString(), userId: currentUser.id, text });
+        saveData();
+        refreshUI();
+    };
+    window.deleteComment = (postId, commentId) => {
+        let post = posts.find(p=> p.id === postId);
+        post.comments = post.comments.filter(c=> c.id !== commentId);
+        saveData();
+        refreshUI();
+    };
+    window.editComment = (postId, commentId) => {
+        let post = posts.find(p=> p.id === postId);
+        let comment = post.comments.find(c=> c.id === commentId);
+        let newText = prompt('Edit komentar:', comment.text);
+        if(newText) { comment.text = newText; saveData(); refreshUI(); }
+    };
+    window.deletePost = (postId) => { if(confirm('Hapus postingan?')) { posts = posts.filter(p=> p.id !== postId); saveData(); refreshUI(); } };
+    
+    function uploadPost(mediaFile, caption) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            let mediaUrl = e.target.result;
+            let mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+            posts.unshift({ id: Date.now().toString(), userId: currentUser.id, caption, mediaUrl, mediaType, likes: [], comments: [], timestamp: Date.now() });
+            saveData();
+            refreshUI();
+        };
+        reader.readAsDataURL(mediaFile);
+    }
+    
+    function uploadStory(mediaFile) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            stories.push({ userId: currentUser.id, mediaUrl: e.target.result, timestamp: Date.now(), mediaType: mediaFile.type.startsWith('video')?'video':'image' });
+            saveData();
+            alert('Story terupload! akan hilang 24 jam.');
+            refreshUI();
+        };
+        reader.readAsDataURL(mediaFile);
+    }
+
+    function renderChatList(container) {
+        let otherUsers = users.filter(u=> u.id !== currentUser.id);
+        container.innerHTML = `<div class="chat-container"><h3>Chat dengan pengguna lain</h3><div class="user-list">${otherUsers.map(u=> `<div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #dbdbdb; cursor:pointer;" onclick="startChat('${u.id}')"><img src="${u.avatar}" style="width:40px;height:40px;border-radius:50%;"><span>${u.username}</span></div>`).join('')}</div></div>`;
+    }
+    window.startChat = (userId) => { selectedChatUserId = userId; currentView = 'chatRoom'; renderCurrentView(); };
+    
+    function renderChatRoom(container) {
+        let partner = users.find(u=> u.id === selectedChatUserId);
+        if(!partner) { currentView = 'chat'; renderCurrentView(); return; }
+        let chatId = [currentUser.id, partner.id].sort().join('_');
+        let messages = chats[chatId] || [];
+        
+        let html = `
+            <div class="chat-room">
+                <div class="chat-header">
+                    <strong>${partner.username}</strong>
+                    <button class="delete-chat-btn" onclick="deleteChat('${partner.id}')">Hapus Chat</button>
+                </div>
+                <div class="chat-messages" id="chatMessages">
+                    ${messages.map((m, idx) => `
+                        <div class="message ${m.senderId===currentUser.id ? 'own' : ''}" data-msg-idx="${idx}">
+                            <strong>${m.senderId===currentUser.id ? 'Anda' : partner.username}</strong><br>
+                            ${m.text}
+                            ${m.senderId===currentUser.id ? `<span class="delete-msg" onclick="deleteMessage('${partner.id}', ${idx})"><i class="fas fa-trash-alt"></i></span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="chat-input">
+                    <input type="text" id="chatMessageInput" placeholder="Pesan...">
+                    <button id="sendMsgBtn">Kirim</button>
+                </div>
+                <button onclick="backToChatList()" style="margin:8px;">Kembali</button>
+            </div>
+        `;
+        container.innerHTML = html;
+        document.getElementById('sendMsgBtn').onclick = () => {
+            let inp = document.getElementById('chatMessageInput');
+            let text = inp.value.trim();
+            if(text) {
+                if(!chats[chatId]) chats[chatId] = [];
+                chats[chatId].push({ senderId: currentUser.id, text, timestamp: Date.now() });
+                saveData();
+                renderChatRoom(container);
+            }
+        };
+        const msgDiv = document.getElementById('chatMessages');
+        if(msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
+    }
+    
+    // Fungsi hapus pesan tertentu
+    window.deleteMessage = (partnerId, idx) => {
+        let chatId = [currentUser.id, partnerId].sort().join('_');
+        if(chats[chatId] && chats[chatId][idx]) {
+            chats[chatId].splice(idx, 1);
+            saveData();
+            // Refresh chat room
+            renderChatRoom(document.getElementById('viewContainer'));
+        }
+    };
+    
+    // Fungsi hapus seluruh chat dengan user tertentu
+    window.deleteChat = (partnerId) => {
+        if(confirm(`Hapus semua pesan dengan ${users.find(u=>u.id===partnerId)?.username}?`)) {
+            let chatId = [currentUser.id, partnerId].sort().join('_');
+            delete chats[chatId];
+            saveData();
+            backToChatList();
+        }
+    };
+    
+    window.backToChatList = () => { currentView = 'chat'; renderCurrentView(); };
+
+    // ========== INIT ==========
+    let savedUser = localStorage.getItem('social_current');
+    if(savedUser) {
+        let uid = JSON.parse(savedUser).id;
+        currentUser = users.find(u => u.id === uid);
+    }
+    if(currentUser) {
+        renderMainApp();
+    } else {
+        showAuthDashboard();
+    }
+</script>
+</body>
+</html>
