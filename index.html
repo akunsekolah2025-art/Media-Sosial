@@ -2,31 +2,21 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Asprata</title>
-    <!-- Font Awesome -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>MediaSosial - Supabase</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: system-ui, 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
         }
-        body {
-            background-color: #fafafa;
-        }
-        /* ========== LAYOUT ========== */
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-        /* DESKTOP SIDEBAR */
+        body { background-color: #fafafa; }
+        .app-container { display: flex; min-height: 100vh; }
         .sidebar {
             width: 260px;
-            background: white;
+            background-color: #ffffff;
             border-right: 1px solid #dbdbdb;
             position: fixed;
             height: 100vh;
@@ -35,15 +25,10 @@
             padding: 1.5rem 1rem;
             z-index: 10;
         }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 2rem;
-            padding-left: 0.5rem;
-        }
-        .logo i { font-size: 1.8rem; }
-        .logo h1 { font-size: 1.3rem; font-weight: 600; }
+        .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; padding-left: 0.5rem; }
+        .logo i { font-size: 1.8rem; color: #262626; }
+        .logo h1 { font-size: 1.3rem; font-weight: 600; letter-spacing: -0.5px; }
+        .nav-items { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
         .nav-item {
             display: flex;
             align-items: center;
@@ -59,76 +44,30 @@
         .nav-item:hover { background-color: #f2f2f2; }
         .nav-item.active { background-color: #efefef; font-weight: 600; }
         .logout-btn { margin-top: auto; color: #ed4956; }
-        .user-mini {
-            padding: 12px 16px;
-            border-top: 1px solid #dbdbdb;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .main-content {
-            flex: 1;
-            margin-left: 260px;
-            padding: 1.5rem 2rem;
-            max-width: calc(100% - 260px);
-        }
-        /* MOBILE */
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .main-content {
-                margin-left: 0;
-                max-width: 100%;
-                padding: 1rem 1rem 80px 1rem;
-            }
-            .bottom-nav {
-                position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: white;
-                border-top: 1px solid #dbdbdb;
-                display: flex;
-                justify-content: space-around;
-                padding: 10px 0;
-                z-index: 100;
-            }
-            .bottom-nav .nav-item {
-                flex-direction: column;
-                gap: 4px;
-                font-size: 12px;
-                padding: 4px;
-            }
-            .bottom-nav .nav-item i { font-size: 1.5rem; }
-            .bottom-nav .nav-item span { font-size: 10px; }
-        }
-        /* SEARCH */
+        .user-mini { padding: 12px 16px; border-top: 1px solid #dbdbdb; margin-top: 1rem; font-size: 0.85rem; display: flex; align-items: center; gap: 10px; }
+        .main-content { flex: 1; margin-left: 260px; padding: 1.5rem 2rem; max-width: calc(100% - 260px); }
         .search-header {
             background: white;
             border-radius: 24px;
             padding: 0.5rem 1rem;
             margin-bottom: 2rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
             border: 1px solid #dbdbdb;
+            display: flex;
+            align-items: center;
         }
         .search-box {
             display: flex;
+            align-items: center;
             gap: 8px;
+            width: 100%;
             background: #f2f2f2;
             padding: 8px 16px;
             border-radius: 24px;
         }
-        .search-box input {
-            border: none;
-            background: transparent;
-            width: 100%;
-            outline: none;
-        }
-        /* FEED / POST CARD */
-        .feed-container, .profile-container, .chat-container {
-            max-width: 630px;
-            margin: 0 auto;
-        }
+        .search-box i { color: #8e8e8e; }
+        .search-box input { border: none; background: transparent; width: 100%; outline: none; font-size: 0.95rem; }
+        .feed-container, .profile-container, .chat-container, .search-results { max-width: 630px; margin: 0 auto; }
         .post-card {
             background: white;
             border: 1px solid #dbdbdb;
@@ -136,90 +75,23 @@
             margin-bottom: 24px;
             overflow: hidden;
         }
-        .post-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-        }
-        .post-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            cursor: pointer;
-        }
-        .post-username {
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .post-time {
-            font-size: 0.7rem;
-            color: #8e8e8e;
-            margin-left: auto;
-        }
-        .post-media {
-            width: 100%;
-            max-height: 500px;
-            object-fit: contain;
-            background: #000;
-        }
-        .post-caption {
-            padding: 12px 16px;
-            font-size: 0.9rem;
-        }
-        .post-actions {
-            display: flex;
-            gap: 20px;
-            padding: 8px 16px;
-            border-top: 1px solid #efefef;
-        }
-        .action-btn {
-            background: none;
-            border: none;
-            font-size: 1.3rem;
-            cursor: pointer;
-            color: #262626;
-        }
+        .post-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+        .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+        .post-username { font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        .post-time { font-size: 0.7rem; color: #8e8e8e; margin-left: auto; }
+        .post-media { width: 100%; max-height: 500px; object-fit: contain; background: #000; }
+        .post-caption { padding: 12px 16px; font-size: 0.9rem; }
+        .post-actions { display: flex; gap: 20px; padding: 8px 16px; border-top: 1px solid #efefef; }
+        .action-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; color: #262626; }
         .liked { color: #ed4956; }
-        .comments-section {
-            padding: 8px 16px 16px;
-            border-top: 1px solid #efefef;
-        }
-        .comment-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 0.85rem;
-        }
+        .comments-section { padding: 8px 16px 16px; border-top: 1px solid #efefef; }
+        .comment-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.85rem; }
         .comment-username { font-weight: 600; cursor: pointer; margin-right: 8px; }
-        .comment-actions button {
-            background: none;
-            border: none;
-            margin-left: 8px;
-            cursor: pointer;
-            font-size: 0.7rem;
-            color: #8e8e8e;
-        }
-        .add-comment {
-            display: flex;
-            gap: 8px;
-            margin-top: 10px;
-        }
-        .add-comment input {
-            flex: 1;
-            border: none;
-            outline: none;
-            padding: 8px 0;
-        }
-        .delete-post {
-            margin-left: auto;
-            background: none;
-            border: none;
-            color: #ed4956;
-            cursor: pointer;
-        }
-        /* PROFILE */
+        .comment-text { flex: 1; }
+        .comment-actions button { background: none; border: none; margin-left: 8px; cursor: pointer; font-size: 0.7rem; color: #8e8e8e; }
+        .add-comment { display: flex; gap: 8px; margin-top: 10px; }
+        .add-comment input { flex: 1; border: none; padding: 8px 0; outline: none; font-size: 0.85rem; }
+        .delete-post { margin-left: auto; background: none; border: none; color: #ed4956; cursor: pointer; }
         .profile-header {
             background: white;
             border: 1px solid #dbdbdb;
@@ -229,21 +101,13 @@
             gap: 3rem;
             align-items: center;
             margin-bottom: 2rem;
-            flex-wrap: wrap;
         }
-        .profile-avatar {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-        .profile-stats {
-            display: flex;
-            gap: 2rem;
-            margin: 1rem 0;
-        }
+        .profile-avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
+        .profile-info h2 { font-size: 1.5rem; }
+        .profile-stats { display: flex; gap: 2rem; margin: 1rem 0; }
         .stat { text-align: center; }
         .stat-number { font-weight: 700; }
+        .bio { margin-top: 0.5rem; color: #262626; }
         .edit-profile-btn, .follow-btn, .chat-btn, .create-post-btn {
             background: #0095f6;
             color: white;
@@ -256,18 +120,8 @@
             margin-right: 8px;
         }
         .follow-btn.following { background: #efefef; color: #262626; }
-        .post-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 4px;
-        }
-        .post-thumb {
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            width: 100%;
-            cursor: pointer;
-        }
-        /* CHAT */
+        .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+        .post-thumb { aspect-ratio: 1 / 1; object-fit: cover; width: 100%; cursor: pointer; }
         .chat-room {
             background: white;
             border: 1px solid #dbdbdb;
@@ -276,14 +130,7 @@
             display: flex;
             flex-direction: column;
         }
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
         .message {
             max-width: 70%;
             padding: 8px 12px;
@@ -313,15 +160,10 @@
             justify-content: center;
             cursor: pointer;
             opacity: 0;
-            transition: 0.2s;
+            transition: opacity 0.2s;
         }
         .message:hover .delete-msg { opacity: 1; }
-        .chat-input {
-            display: flex;
-            border-top: 1px solid #dbdbdb;
-            padding: 12px;
-            gap: 8px;
-        }
+        .chat-input { display: flex; border-top: 1px solid #dbdbdb; padding: 12px; gap: 8px; }
         .chat-input input { flex: 1; border: none; outline: none; padding: 8px; }
         .chat-header {
             display: flex;
@@ -330,8 +172,15 @@
             padding: 12px 16px;
             border-bottom: 1px solid #dbdbdb;
         }
-        .delete-chat-btn { background: #ed4956; padding: 4px 12px; font-size: 0.8rem; }
-        /* MODAL */
+        .delete-chat-btn {
+            background: #ed4956;
+            color: white;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
         .modal {
             display: none;
             position: fixed;
@@ -349,59 +198,31 @@
             width: 90%;
             max-width: 400px;
         }
-        button {
-            background: #0095f6;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 8px;
-            margin: 8px 0;
-            border: 1px solid #dbdbdb;
-            border-radius: 6px;
-        }
+        .crop-container canvas { width: 100%; height: auto; }
+        button { background: #0095f6; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px; }
+        input, textarea { width: 100%; padding: 8px; margin: 8px 0; border: 1px solid #dbdbdb; border-radius: 6px; }
         .story-viewer {
             position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: black;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 2000;
         }
-        .close-story {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-        }
-        .auth-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #fafafa;
-        }
-        .auth-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            width: 350px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-        .auth-switch {
-            margin-top: 1rem;
-            color: #0095f6;
-            cursor: pointer;
-        }
+        .story-content { max-width: 90%; max-height: 90%; }
+        .story-content img, .story-content video { max-width: 100%; max-height: 90vh; object-fit: contain; }
+        .close-story { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; }
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #fafafa; }
+        .auth-card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+        .auth-card h2 { margin-bottom: 1.5rem; }
+        .auth-card input { margin-bottom: 1rem; }
+        .auth-card button { width: 100%; margin-top: 0.5rem; }
+        .auth-switch { margin-top: 1rem; color: #0095f6; cursor: pointer; }
         .search-results-list {
             background: white;
             border-radius: 12px;
@@ -416,110 +237,96 @@
             cursor: pointer;
             border-bottom: 1px solid #efefef;
         }
+        .search-result-item:hover { background: #f9f9f9; }
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .main-content { margin-left: 0; max-width: 100%; padding: 1rem 1rem 80px 1rem; }
+            .bottom-nav {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                border-top: 1px solid #dbdbdb;
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+                padding: 10px 0;
+                z-index: 100;
+                backdrop-filter: blur(10px);
+                background-color: rgba(255,255,255,0.96);
+            }
+            .bottom-nav .nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 4px;
+                font-size: 12px;
+                padding: 4px 0;
+                cursor: pointer;
+                color: #8e8e8e;
+            }
+            .bottom-nav .nav-item i { font-size: 1.5rem; }
+            .bottom-nav .nav-item.active { color: #0095f6; }
+            .bottom-nav .nav-item span { font-size: 10px; }
+            .profile-header { flex-direction: column; text-align: center; gap: 1rem; padding: 1rem; }
+            .profile-avatar { width: 80px; height: 80px; }
+            .profile-stats { justify-content: center; gap: 1.5rem; }
+            .post-grid { gap: 2px; }
+            .feed-container, .profile-container, .chat-container { max-width: 100%; }
+            .chat-room { height: calc(100vh - 140px); }
+        }
     </style>
 </head>
 <body>
 <div id="app"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // ================== KONFIGURASI SUPABASE ==================
-    // GANTI DENGAN DATA PROYEK ANDA YANG DIDAPAT DARI DASHBOARD SUPABASE!
-    const SUPABASE_URL = 'https://qhpgjezbhockcbjbwnas.supabase.co';      // ganti
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFocGdqZXpiaG9ja2NiamJ3bmFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTk4MDQsImV4cCI6MjA5MDI3NTgwNH0.QGzGowlMErUskMKHBZzxAKDxQWKvT7onAJfWLyiK3Gk';          // ganti
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabase = supabase; // agar bisa dipakai di fungsi global
+    // ========== SUPABASE KONFIGURASI ==========
+    const supabaseUrl = 'https://qhpgjezbhockcbjbwnas.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFocGdqZXpiaG9ja2NiamJ3bmFzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2OTk4MDQsImV4cCI6MjA5MDI3NTgwNH0.QGzGowlMErUskMKHBZzxAKDxQWKvT7onAJfWLyiK3Gk';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // ================== SETUP DATABASE (JALANKAN DI SQL EDITOR SUPABASE) ==================
-    /*
-        -- Buat tabel users
-        CREATE TABLE users (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          email TEXT UNIQUE NOT NULL,
-          username TEXT UNIQUE NOT NULL,
-          bio TEXT,
-          avatar_url TEXT,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
-        -- Buat tabel posts
-        CREATE TABLE posts (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-          caption TEXT,
-          media_url TEXT,
-          media_type TEXT CHECK (media_type IN ('image', 'video')),
-          likes TEXT[] DEFAULT '{}',
-          comments JSONB DEFAULT '[]',
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
-        -- Buat tabel follows
-        CREATE TABLE follows (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          follower_id UUID REFERENCES users(id) ON DELETE CASCADE,
-          following_id UUID REFERENCES users(id) ON DELETE CASCADE,
-          created_at TIMESTAMPTZ DEFAULT NOW(),
-          UNIQUE(follower_id, following_id)
-        );
-
-        -- Buat tabel messages (chat)
-        CREATE TABLE messages (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          chat_room_id TEXT NOT NULL,
-          sender_id UUID REFERENCES users(id),
-          receiver_id UUID REFERENCES users(id),
-          text TEXT,
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
-        -- Buat tabel stories
-        CREATE TABLE stories (
-          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-          user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-          media_url TEXT NOT NULL,
-          media_type TEXT CHECK (media_type IN ('image', 'video')),
-          created_at TIMESTAMPTZ DEFAULT NOW()
-        );
-
-        -- JANGAN LUPA BUAT BUCKET STORAGE 'media' (PUBLIC) di dashboard Supabase
-    */
-
-    // ================== VARIABEL GLOBAL ==================
-    let currentUser = null;          // data user lengkap (dari tabel users)
+    // ========== GLOBAL VARIABLES ==========
+    let currentUser = null;      // data user dari tabel users
     let currentView = 'beranda';
     let selectedChatUserId = null;
     let showSearchResults = false;
 
-    // ================== HELPER ==================
-    function formatDate(iso) {
-        return new Date(iso).toLocaleString('id-ID', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' });
-    }
-
-    // ================== AUTH ==================
-    async function register(email, password, username) {
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({ email, password });
-        if (signUpError) return alert(signUpError.message);
-        // simpan profil ke tabel users
-        const { error: insertError } = await supabase.from('users').insert({
-            id: authData.user.id,
-            email: email,
-            username: username,
-            avatar_url: `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/200/200`,
-            bio: ''
+    // ========== AUTH & USER FUNCTIONS ==========
+    async function registerUser(email, password, username) {
+        // 1. Daftar ke Supabase Auth
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+            email, password
         });
-        if (insertError) console.error(insertError);
-        alert('Akun berhasil dibuat! Silakan login.');
-        showAuthForm();
+        if (signUpError) return { success: false, error: signUpError.message };
+
+        // 2. Simpan profil ke tabel users
+        const avatarUrl = `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/200/200`;
+        const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+                id: authData.user.id,
+                email: email,
+                username: username,
+                avatar_url: avatarUrl,
+                bio: ''
+            });
+        if (insertError) {
+            await supabase.auth.signOut();
+            return { success: false, error: insertError.message };
+        }
+        return { success: true, user: authData.user };
     }
 
-    async function login(email, password) {
+    async function loginUser(email, password) {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) return alert(error.message);
-        await loadCurrentUser();
-        renderMainApp();
+        if (error) return { success: false, error: error.message };
+        return { success: true, user: data.user };
     }
 
-    async function logout() {
+    async function logoutUser() {
         await supabase.auth.signOut();
         currentUser = null;
         showAuthForm();
@@ -528,60 +335,88 @@
     async function loadCurrentUser() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return null;
-        const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
+        const { data: profile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
         currentUser = profile;
         return currentUser;
     }
 
-    // ================== STORAGE UPLOAD ==================
-    async function uploadFile(file, folder) {
-        const fileName = `${folder}/${Date.now()}_${file.name}`;
-        const { error } = await supabase.storage.from('media').upload(fileName, file);
-        if (error) throw error;
-        const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
-        return publicUrl;
-    }
-
-    // ================== POSTINGAN ==================
+    // ========== DATABASE OPERATIONS ==========
     async function createPost(mediaFile, caption) {
         if (!currentUser) return;
-        let mediaUrl = null, mediaType = null;
-        if (mediaFile) {
-            mediaUrl = await uploadFile(mediaFile, 'posts');
-            mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
-        }
-        await supabase.from('posts').insert({
-            user_id: currentUser.id,
-            caption: caption,
-            media_url: mediaUrl,
-            media_type: mediaType,
-            likes: [],
-            comments: []
-        });
-        refreshUI();
+        // Upload file ke storage
+        const fileName = `posts/${Date.now()}_${mediaFile.name}`;
+        const { error: uploadError } = await supabase.storage
+            .from('media')
+            .upload(fileName, mediaFile);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
+        const mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
+        const { error: insertError } = await supabase
+            .from('posts')
+            .insert({
+                user_id: currentUser.id,
+                caption: caption,
+                media_url: publicUrl,
+                media_type: mediaType,
+                likes: [],
+                comments: []
+            });
+        if (insertError) throw insertError;
     }
 
-    async function getFeed() {
-        // ambil semua postingan + data user, urut terbaru
+    async function getFeedPosts() {
+        // Dapatkan daftar id yang diikuti (including diri sendiri)
+        const { data: following } = await supabase
+            .from('follows')
+            .select('following_id')
+            .eq('follower_id', currentUser.id);
+        const followingIds = following.map(f => f.following_id);
+        followingIds.push(currentUser.id); // include own posts
+
         const { data, error } = await supabase
             .from('posts')
             .select('*, users(username, avatar_url)')
+            .in('user_id', followingIds)
             .order('created_at', { ascending: false });
         if (error) return [];
         return data;
     }
 
-    async function likePost(postId, userId) {
-        const { data: post } = await supabase.from('posts').select('likes').eq('id', postId).single();
+    async function getUserPosts(userId) {
+        const { data, error } = await supabase
+            .from('posts')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+        if (error) return [];
+        return data;
+    }
+
+    async function likePost(postId) {
+        const { data: post } = await supabase
+            .from('posts')
+            .select('likes')
+            .eq('id', postId)
+            .single();
         let likes = post.likes || [];
-        if (likes.includes(userId)) likes = likes.filter(id => id !== userId);
-        else likes.push(userId);
+        if (likes.includes(currentUser.id)) {
+            likes = likes.filter(id => id !== currentUser.id);
+        } else {
+            likes.push(currentUser.id);
+        }
         await supabase.from('posts').update({ likes }).eq('id', postId);
-        refreshUI();
     }
 
     async function addComment(postId, text) {
-        const { data: post } = await supabase.from('posts').select('comments').eq('id', postId).single();
+        const { data: post } = await supabase
+            .from('posts')
+            .select('comments')
+            .eq('id', postId)
+            .single();
         const newComment = {
             id: Date.now().toString(),
             userId: currentUser.id,
@@ -592,62 +427,97 @@
         const comments = post.comments || [];
         comments.push(newComment);
         await supabase.from('posts').update({ comments }).eq('id', postId);
-        refreshUI();
     }
 
     async function deleteComment(postId, commentId) {
-        const { data: post } = await supabase.from('posts').select('comments').eq('id', postId).single();
-        const newComments = (post.comments || []).filter(c => c.id !== commentId);
-        await supabase.from('posts').update({ comments: newComments }).eq('id', postId);
-        refreshUI();
+        const { data: post } = await supabase
+            .from('posts')
+            .select('comments')
+            .eq('id', postId)
+            .single();
+        const comments = (post.comments || []).filter(c => c.id !== commentId);
+        await supabase.from('posts').update({ comments }).eq('id', postId);
+    }
+
+    async function editComment(postId, commentId, newText) {
+        const { data: post } = await supabase
+            .from('posts')
+            .select('comments')
+            .eq('id', postId)
+            .single();
+        const comments = (post.comments || []).map(c => {
+            if (c.id === commentId) c.text = newText;
+            return c;
+        });
+        await supabase.from('posts').update({ comments }).eq('id', postId);
     }
 
     async function deletePost(postId) {
-        if (confirm('Hapus postingan?')) {
-            await supabase.from('posts').delete().eq('id', postId);
-            refreshUI();
-        }
+        await supabase.from('posts').delete().eq('id', postId);
     }
 
-    // ================== FOLLOW ==================
-    async function followUser(targetId) {
-        const { error } = await supabase.from('follows').insert({
+    async function followUser(targetUserId) {
+        await supabase.from('follows').insert({
             follower_id: currentUser.id,
-            following_id: targetId
+            following_id: targetUserId
         });
-        if (error) console.error(error);
-        refreshUI();
     }
 
-    async function unfollowUser(targetId) {
-        await supabase.from('follows').delete().match({
-            follower_id: currentUser.id,
-            following_id: targetId
-        });
-        refreshUI();
+    async function unfollowUser(targetUserId) {
+        await supabase.from('follows').delete()
+            .match({ follower_id: currentUser.id, following_id: targetUserId });
     }
 
-    async function isFollowing(followerId, followingId) {
-        const { data, error } = await supabase
+    async function isFollowing(targetUserId) {
+        const { count, error } = await supabase
             .from('follows')
-            .select('id')
-            .eq('follower_id', followerId)
-            .eq('following_id', followingId)
-            .maybeSingle();
-        return !!data;
+            .select('*', { count: 'exact', head: true })
+            .match({ follower_id: currentUser.id, following_id: targetUserId });
+        return count > 0;
     }
 
     async function getFollowersCount(userId) {
-        const { count } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', userId);
-        return count || 0;
+        const { count } = await supabase
+            .from('follows')
+            .select('*', { count: 'exact', head: true })
+            .eq('following_id', userId);
+        return count;
     }
 
     async function getFollowingCount(userId) {
-        const { count } = await supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', userId);
-        return count || 0;
+        const { count } = await supabase
+            .from('follows')
+            .select('*', { count: 'exact', head: true })
+            .eq('follower_id', userId);
+        return count;
     }
 
-    // ================== CHAT ==================
+    async function searchUsers(query) {
+        const { data } = await supabase
+            .from('users')
+            .select('*')
+            .ilike('username', `%${query}%`);
+        return data || [];
+    }
+
+    async function updateProfile(username, bio, newAvatarFile) {
+        let avatarUrl = currentUser.avatar_url;
+        if (newAvatarFile) {
+            const fileName = `avatars/${currentUser.id}_${Date.now()}`;
+            await supabase.storage.from('media').upload(fileName, newAvatarFile);
+            const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
+            avatarUrl = publicUrl;
+        }
+        await supabase
+            .from('users')
+            .update({ username, bio, avatar_url: avatarUrl })
+            .eq('id', currentUser.id);
+        // update currentUser object
+        currentUser.username = username;
+        currentUser.bio = bio;
+        currentUser.avatar_url = avatarUrl;
+    }
+
     async function sendMessage(receiverId, text) {
         const chatRoomId = [currentUser.id, receiverId].sort().join('_');
         await supabase.from('messages').insert({
@@ -656,40 +526,37 @@
             receiver_id: receiverId,
             text: text
         });
-        refreshUI(); // realtime akan lebih baik, tapi cukup refresh sementara
     }
 
     async function getMessages(chatRoomId) {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('messages')
             .select('*')
             .eq('chat_room_id', chatRoomId)
             .order('created_at', { ascending: true });
-        return data || [];
+        if (error) return [];
+        return data;
     }
 
     async function deleteMessage(messageId) {
         await supabase.from('messages').delete().eq('id', messageId);
-        refreshUI();
     }
 
     async function deleteChatRoom(partnerId) {
         const chatRoomId = [currentUser.id, partnerId].sort().join('_');
         await supabase.from('messages').delete().eq('chat_room_id', chatRoomId);
-        refreshUI();
-        backToChatList();
     }
 
-    // ================== STORY ==================
     async function uploadStory(mediaFile) {
-        const url = await uploadFile(mediaFile, 'stories');
+        const fileName = `stories/${Date.now()}_${mediaFile.name}`;
+        await supabase.storage.from('media').upload(fileName, mediaFile);
+        const { data: { publicUrl } } = supabase.storage.from('media').getPublicUrl(fileName);
+        const mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
         await supabase.from('stories').insert({
             user_id: currentUser.id,
-            media_url: url,
-            media_type: mediaFile.type.startsWith('video') ? 'video' : 'image'
+            media_url: publicUrl,
+            media_type: mediaType
         });
-        alert('Story terupload! akan hilang dalam 24 jam.');
-        refreshUI();
     }
 
     async function getActiveStories() {
@@ -703,39 +570,7 @@
         return data || [];
     }
 
-    // ================== PROFILE ==================
-    async function getUserProfile(userId) {
-        const { data } = await supabase.from('users').select('*').eq('id', userId).single();
-        return data;
-    }
-
-    async function updateProfile(username, bio, avatarFile) {
-        let avatarUrl = currentUser.avatar_url;
-        if (avatarFile) {
-            avatarUrl = await uploadFile(avatarFile, 'avatars');
-        }
-        await supabase.from('users').update({ username, bio, avatar_url: avatarUrl }).eq('id', currentUser.id);
-        await loadCurrentUser();
-        refreshUI();
-    }
-
-    async function searchUsers(keyword) {
-        if (!keyword) return [];
-        const { data } = await supabase
-            .from('users')
-            .select('*')
-            .ilike('username', `%${keyword}%`)
-            .neq('id', currentUser.id);
-        return data || [];
-    }
-
-    // ================== RENDER UI ==================
-    function refreshUI() {
-        if (currentUser && document.getElementById('viewContainer')) {
-            renderCurrentView();
-        }
-    }
-
+    // ========== UI RENDER FUNCTIONS ==========
     function showAuthForm() {
         const app = document.getElementById('app');
         app.innerHTML = `
@@ -743,42 +578,51 @@
                 <div class="auth-card">
                     <h2><i class="fab fa-instagram"></i> MediaSosial</h2>
                     <div id="authForm">
-                        <input type="email" id="loginEmail" placeholder="Email">
-                        <input type="password" id="loginPassword" placeholder="Password">
+                        <input type="email" id="authEmail" placeholder="Email">
+                        <input type="password" id="authPassword" placeholder="Password">
                         <button id="loginBtn">Login</button>
                         <div class="auth-switch" id="switchToRegister">Belum punya akun? Daftar</div>
                     </div>
                 </div>
             </div>
         `;
-        document.getElementById('loginBtn').onclick = () => {
-            const email = document.getElementById('loginEmail').value;
-            const pwd = document.getElementById('loginPassword').value;
-            login(email, pwd);
+        document.getElementById('loginBtn').onclick = async () => {
+            const email = document.getElementById('authEmail').value;
+            const password = document.getElementById('authPassword').value;
+            const res = await loginUser(email, password);
+            if (res.success) {
+                await loadCurrentUser();
+                renderMainApp();
+            } else alert(res.error);
         };
         document.getElementById('switchToRegister').onclick = () => {
             document.getElementById('authForm').innerHTML = `
                 <input type="email" id="regEmail" placeholder="Email">
-                <input type="text" id="regUsername" placeholder="Username">
                 <input type="password" id="regPassword" placeholder="Password">
-                <button id="regBtn">Daftar</button>
+                <input type="text" id="regUsername" placeholder="Username">
+                <button id="registerBtn">Daftar</button>
                 <div class="auth-switch" id="switchToLogin">Sudah punya akun? Login</div>
             `;
-            document.getElementById('regBtn').onclick = () => {
+            document.getElementById('registerBtn').onclick = async () => {
                 const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
                 const username = document.getElementById('regUsername').value;
-                const pwd = document.getElementById('regPassword').value;
-                register(email, pwd, username);
+                const res = await registerUser(email, password, username);
+                if (res.success) {
+                    alert('Akun berhasil dibuat! Silakan login.');
+                    showAuthForm();
+                } else alert(res.error);
             };
             document.getElementById('switchToLogin').onclick = () => showAuthForm();
         };
     }
 
-    function renderMainApp() {
+    async function renderMainApp() {
+        if (!currentUser) return;
         const app = document.getElementById('app');
         app.innerHTML = `
             <div class="app-container">
-                <nav class="sidebar">
+                <nav class="sidebar" id="desktopSidebar">
                     <div class="logo"><i class="fab fa-instagram"></i><h1>MediaSosial</h1></div>
                     <div class="nav-items">
                         <div class="nav-item" data-nav="beranda"><i class="fas fa-home"></i><span>Beranda</span></div>
@@ -786,72 +630,78 @@
                         <div class="nav-item" data-nav="chat"><i class="fas fa-comment-dots"></i><span>Chat</span></div>
                         <div class="nav-item logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
                     </div>
-                    <div class="user-mini"><i class="fas fa-user-circle"></i> <span>${currentUser?.username || ''}</span></div>
+                    <div class="user-mini" id="userMini"></div>
                 </nav>
                 <main class="main-content">
                     <div class="search-header">
-                        <div class="search-box"><i class="fas fa-search"></i><input type="text" id="searchInput" placeholder="Cari akun..."></div>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Cari akun lain...">
+                        </div>
                     </div>
                     <div id="viewContainer"></div>
                 </main>
             </div>
-            <div class="bottom-nav" style="display:none;">
+            <div class="bottom-nav" id="bottomNav" style="display: none;">
                 <div class="nav-item" data-nav="beranda"><i class="fas fa-home"></i><span>Beranda</span></div>
                 <div class="nav-item" data-nav="profile"><i class="fas fa-user-circle"></i><span>Profile</span></div>
                 <div class="nav-item" data-nav="chat"><i class="fas fa-comment-dots"></i><span>Chat</span></div>
                 <div class="nav-item logout-btn" id="logoutBtnMobile"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
             </div>
-            <!-- modals -->
-            <div id="cropModal" class="modal">...</div>
-            <div id="postModal" class="modal"><div class="modal-content"><h3>Postingan Baru</h3><input type="text" id="postCaption" placeholder="Caption"><input type="file" id="postMedia" accept="image/*,video/*"><button id="submitPostBtn">Upload</button></div></div>
-            <div id="storyModal" class="modal"><div class="modal-content"><h3>Upload Story</h3><input type="file" id="storyMedia" accept="image/*,video/*"><button id="submitStoryBtn">Upload</button></div></div>
-            <div id="editProfileModal" class="modal"><div class="modal-content"><h3>Edit Profil</h3><input type="text" id="editUsername"><textarea id="editBio" rows="3"></textarea><input type="file" id="editAvatar" accept="image/*"><div class="modal-buttons"><button id="saveProfileBtn">Simpan</button><button id="cancelEditBtn">Batal</button></div></div></div>
+            <div id="cropModal" class="modal"><div class="modal-content"><h3>Crop Foto Profil (1:1)</h3><div class="crop-container"><canvas id="cropCanvas" width="300" height="300"></canvas></div><div class="modal-buttons"><button id="confirmCropBtn">Terapkan</button><button id="cancelCropBtn">Batal</button></div></div></div>
+            <div id="postModal" class="modal"><div class="modal-content"><h3>Buat Postingan</h3><input type="text" id="postCaption" placeholder="Caption..."><input type="file" id="postMedia" accept="image/*,video/*"><button id="submitPostBtn">Upload</button></div></div>
+            <div id="storyModal" class="modal"><div class="modal-content"><h3>Upload Story (24 jam)</h3><input type="file" id="storyMedia" accept="image/*,video/*"><button id="submitStoryBtn">Upload</button></div></div>
+            <div id="editProfileModal" class="modal"><div class="modal-content"><h3>Edit Profil</h3><label>Username</label><input type="text" id="editUsername"><label>Bio</label><textarea id="editBio" rows="3"></textarea><label>Foto Profil</label><input type="file" id="profilePictureInput" accept="image/*"><div class="modal-buttons"><button id="saveProfileBtn">Simpan</button><button id="cancelEditProfileBtn">Batal</button></div></div></div>
         `;
-        if (window.innerWidth <= 768) document.querySelector('.bottom-nav').style.display = 'flex';
-        window.addEventListener('resize', () => {
-            document.querySelector('.bottom-nav').style.display = window.innerWidth <= 768 ? 'flex' : 'none';
-        });
+        if (window.innerWidth <= 768) {
+            document.getElementById('bottomNav').style.display = 'flex';
+        }
+        document.getElementById('userMini').innerHTML = `<i class="fas fa-user-circle"></i> <span>${currentUser.username}</span>`;
+        document.getElementById('logoutBtn').onclick = () => logoutUser();
+        document.getElementById('logoutBtnMobile').onclick = () => logoutUser();
 
-        document.querySelectorAll('.nav-item').forEach(el => {
-            const nav = el.getAttribute('data-nav');
-            if (nav) el.onclick = () => { currentView = nav; renderCurrentView(); updateNavActive(); };
+        document.querySelectorAll('.nav-item').forEach(btn => {
+            if (btn.getAttribute('data-nav')) {
+                btn.onclick = () => { currentView = btn.getAttribute('data-nav'); renderCurrentView(); updateNavActive(); };
+            }
         });
-        document.getElementById('logoutBtn')?.addEventListener('click', logout);
-        document.getElementById('logoutBtnMobile')?.addEventListener('click', logout);
-
+        document.getElementById('confirmCropBtn').onclick = () => cropCallback && cropCallback();
+        document.getElementById('cancelCropBtn').onclick = () => document.getElementById('cropModal').style.display = 'none';
         document.getElementById('submitPostBtn').onclick = async () => {
             const file = document.getElementById('postMedia').files[0];
-            const cap = document.getElementById('postCaption').value;
-            if (file) await createPost(file, cap);
+            const caption = document.getElementById('postCaption').value;
+            if (file) await createPost(file, caption);
             document.getElementById('postModal').style.display = 'none';
+            renderCurrentView();
         };
         document.getElementById('submitStoryBtn').onclick = async () => {
             const file = document.getElementById('storyMedia').files[0];
             if (file) await uploadStory(file);
             document.getElementById('storyModal').style.display = 'none';
+            alert('Story terupload!');
+            renderCurrentView();
         };
-        document.getElementById('saveProfileBtn').onclick = async () => {
-            const username = document.getElementById('editUsername').value;
-            const bio = document.getElementById('editBio').value;
-            const avatarFile = document.getElementById('editAvatar').files[0];
-            await updateProfile(username, bio, avatarFile);
-            document.getElementById('editProfileModal').style.display = 'none';
-        };
-        document.getElementById('cancelEditBtn').onclick = () => document.getElementById('editProfileModal').style.display = 'none';
-
-        // SEARCH
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', async (e) => {
-            const query = e.target.value.trim();
-            if (!query) { showSearchResults = false; renderCurrentView(); return; }
+        document.getElementById('searchInput').addEventListener('input', async (e) => {
+            const query = e.target.value.trim().toLowerCase();
+            if (query === '') { showSearchResults = false; renderCurrentView(); return; }
             const results = await searchUsers(query);
             const container = document.getElementById('viewContainer');
-            container.innerHTML = `<div class="search-results-list"><h3>Hasil pencarian</h3>${results.map(u => `<div class="search-result-item" onclick="viewProfile('${u.id}')"><img src="${u.avatar_url}" width="40" style="border-radius:50%"><span>${u.username}</span></div>`).join('')}${results.length === 0 ? '<div>Tidak ditemukan</div>' : ''}</div>`;
+            container.innerHTML = `
+                <div class="search-results-list">
+                    <h3>Hasil pencarian untuk "${e.target.value}"</h3>
+                    ${results.map(u => `
+                        <div class="search-result-item" onclick="viewProfile('${u.id}')">
+                            <img src="${u.avatar_url}" width="40" style="border-radius:50%">
+                            <span>${u.username}</span>
+                        </div>
+                    `).join('')}
+                    ${results.length === 0 ? '<div class="search-result-item">Tidak ditemukan</div>' : ''}
+                </div>
+            `;
             showSearchResults = true;
         });
-
         updateNavActive();
-        renderCurrentView();
+        await renderCurrentView();
     }
 
     function updateNavActive() {
@@ -861,154 +711,257 @@
         });
     }
 
-    function renderCurrentView() {
+    async function renderCurrentView() {
         if (showSearchResults) return;
         const container = document.getElementById('viewContainer');
         if (!container) return;
-        if (currentView === 'beranda') renderFeed(container);
-        else if (currentView === 'profile') renderProfile(container, currentUser.id);
-        else if (currentView === 'chat') renderChatList(container);
-        else if (currentView === 'chatRoom') renderChatRoom(container);
+        if (currentView === 'beranda') await renderFeed(container);
+        else if (currentView === 'profile') await renderProfile(container, currentUser.id);
+        else if (currentView === 'chat') await renderChatList(container);
+        else if (currentView === 'chatRoom') await renderChatRoom(container);
     }
 
     async function renderFeed(container) {
-        const posts = await getFeed();
+        const feedPosts = await getFeedPosts();
         const stories = await getActiveStories();
-        let html = `<div class="feed-container">`;
-        // story bar
-        html += `<div style="display:flex; gap:12px; overflow-x:auto; margin-bottom:24px;">`;
+        // Group stories by user
+        const storyUsers = [];
+        const seen = new Set();
         for (let s of stories) {
-            const owner = s.users;
-            html += `<div style="text-align:center; cursor:pointer;" onclick="viewStory('${s.media_url}','${s.media_type}')"><img src="${owner.avatar_url}" style="width:60px; height:60px; border-radius:50%; border:2px solid #c32aa3; object-fit:cover;"><div style="font-size:12px">${owner.username}</div></div>`;
+            if (!seen.has(s.user_id)) {
+                seen.add(s.user_id);
+                storyUsers.push(s);
+            }
         }
-        html += `<div onclick="document.getElementById('storyModal').style.display='flex'" style="text-align:center; cursor:pointer;"><i class="fas fa-plus-circle fa-2x" style="color:#0095f6;"></i><div>Story</div></div>`;
-        html += `</div><button id="createPostBtn" style="margin-bottom:16px;">+ Postingan Baru</button>`;
-        for (let post of posts) {
-            const isLiked = post.likes?.includes(currentUser.id);
-            html += `
-            <div class="post-card">
+        let html = `<div class="feed-container">
+            <div style="display:flex; gap:16px; overflow-x:auto; margin-bottom:24px; padding-bottom:8px;">`;
+        storyUsers.forEach(s => {
+            html += `<div style="text-align:center; cursor:pointer;" onclick="viewStoryById('${s.user_id}')">
+                <img src="${s.users.avatar_url}" style="width:60px; height:60px; border-radius:50%; border:2px solid #c32aa3; object-fit:cover;">
+                <div style="font-size:12px">${s.users.username}</div>
+            </div>`;
+        });
+        html += `<div style="text-align:center; cursor:pointer;" onclick="document.getElementById('storyModal').style.display='flex'">
+            <i class="fas fa-plus-circle fa-2x" style="color:#0095f6;"></i><div>Story</div>
+        </div></div>`;
+        html += `<button id="createPostBtn" style="margin-bottom:16px; background:#0095f6;">+ Postingan Baru</button>`;
+        if (feedPosts.length === 0) html += `<div class="post-card" style="padding:2rem; text-align:center">Belum ada postingan. Ikuti akun lain atau buat postingan.</div>`;
+        for (const post of feedPosts) {
+            const owner = post.users;
+            const isLiked = (post.likes || []).includes(currentUser.id);
+            html += `<div class="post-card" data-postid="${post.id}">
                 <div class="post-header">
-                    <img class="post-avatar" src="${post.users.avatar_url}" onclick="viewProfile('${post.user_id}')">
-                    <span class="post-username" onclick="viewProfile('${post.user_id}')">${post.users.username}</span>
-                    <span class="post-time">${formatDate(post.created_at)}</span>
-                    ${post.user_id === currentUser.id ? `<button class="delete-post" onclick="deletePost('${post.id}')"><i class="fas fa-trash"></i></button>` : ''}
+                    <img class="post-avatar" src="${owner.avatar_url}" onclick="viewProfile('${owner.id}')">
+                    <span class="post-username" onclick="viewProfile('${owner.id}')">${owner.username}</span>
+                    <span class="post-time">${new Date(post.created_at).toLocaleString()}</span>
+                    ${post.user_id === currentUser.id ? `<button class="delete-post" onclick="deletePostById('${post.id}')"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
-                ${post.media_url ? (post.media_type === 'video' ? `<video controls class="post-media" src="${post.media_url}"></video>` : `<img class="post-media" src="${post.media_url}">`) : ''}
-                <div class="post-caption"><strong>${post.users.username}</strong> ${post.caption || ''}</div>
+                ${post.media_type === 'video' ? `<video controls class="post-media" src="${post.media_url}"></video>` : `<img class="post-media" src="${post.media_url}">`}
+                <div class="post-caption"><strong>${owner.username}</strong> ${post.caption}</div>
                 <div class="post-actions">
-                    <button class="action-btn like-btn" data-postid="${post.id}"><i class="fas fa-heart"></i> ${post.likes?.length || 0}</button>
-                    <button class="action-btn comment-toggle" data-postid="${post.id}"><i class="fas fa-comment"></i> ${post.comments?.length || 0}</button>
+                    <button class="action-btn like-btn" data-postid="${post.id}"><i class="fas fa-heart"></i> <span class="like-count">${(post.likes || []).length}</span></button>
+                    <button class="action-btn comment-toggle" data-postid="${post.id}"><i class="fas fa-comment"></i> ${(post.comments || []).length}</button>
                 </div>
                 <div class="comments-section" id="comments-${post.id}" style="display:none;">
-                    <div id="commentsList-${post.id}">${(post.comments || []).map(c => `<div class="comment-item"><div><span class="comment-username" onclick="viewProfile('${c.userId}')">${c.username}</span> <span class="comment-text">${c.text}</span></div>${c.userId === currentUser.id ? `<div><button onclick="deleteComment('${post.id}','${c.id}')">hapus</button></div>` : ''}</div>`).join('')}</div>
-                    <div class="add-comment"><input type="text" id="commentInput-${post.id}" placeholder="Tulis komentar..."><button onclick="addComment('${post.id}')">Kirim</button></div>
+                    <div id="commentsList-${post.id}">${(post.comments || []).map(c => `
+                        <div class="comment-item" data-commentid="${c.id}">
+                            <div>
+                                <span class="comment-username" onclick="viewProfile('${c.userId}')">${c.username}</span>
+                                <span class="comment-text">${c.text}</span>
+                            </div>
+                            ${c.userId === currentUser.id ? `<div class="comment-actions">
+                                <button onclick="editCommentById('${post.id}','${c.id}')">edit</button>
+                                <button onclick="deleteCommentById('${post.id}','${c.id}')">hapus</button>
+                            </div>` : ''}
+                        </div>
+                    `).join('')}</div>
+                    <div class="add-comment">
+                        <input type="text" placeholder="Tambah komentar..." id="commentInput-${post.id}">
+                        <button onclick="addCommentById('${post.id}')">Kirim</button>
+                    </div>
                 </div>
             </div>`;
         }
         container.innerHTML = html;
         document.getElementById('createPostBtn')?.addEventListener('click', () => document.getElementById('postModal').style.display = 'flex');
-        document.querySelectorAll('.like-btn').forEach(btn => btn.addEventListener('click', () => likePost(btn.dataset.postid, currentUser.id)));
-        document.querySelectorAll('.comment-toggle').forEach(btn => btn.addEventListener('click', () => {
-            const div = document.getElementById(`comments-${btn.dataset.postid}`);
-            div.style.display = div.style.display === 'none' ? 'block' : 'none';
-        }));
+        document.querySelectorAll('.like-btn').forEach(btn => btn.addEventListener('click', async (e) => { await likePost(btn.dataset.postid); await renderCurrentView(); }));
+        document.querySelectorAll('.comment-toggle').forEach(btn => btn.addEventListener('click', () => { let div = document.getElementById(`comments-${btn.dataset.postid}`); div.style.display = div.style.display === 'none' ? 'block' : 'none'; }));
     }
 
-    window.viewProfile = async (userId) => {
-        currentView = 'profile';
-        renderMainApp();
-        setTimeout(() => renderProfile(document.getElementById('viewContainer'), userId), 0);
+    window.viewProfile = (userId) => { currentView = 'profile'; renderMainApp(); setTimeout(() => renderProfile(document.getElementById('viewContainer'), userId), 0); };
+    window.viewStoryById = async (userId) => {
+        const { data } = await supabase.from('stories').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(1);
+        if (data && data[0]) viewStory(data[0]);
     };
-    window.viewStory = (url, type) => {
-        const modal = document.createElement('div');
-        modal.className = 'story-viewer';
-        modal.innerHTML = `<div class="close-story"><i class="fas fa-times"></i></div><div class="story-content">${type === 'video' ? `<video controls autoplay src="${url}"></video>` : `<img src="${url}">`}</div>`;
-        document.body.appendChild(modal);
-        modal.querySelector('.close-story').onclick = () => modal.remove();
-        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
-    };
-
-    async function renderProfile(container, userId) {
-        const profile = await getUserProfile(userId);
-        if (!profile) return;
-        const isOwn = profile.id === currentUser.id;
-        const following = await isFollowing(currentUser.id, profile.id);
-        const posts = await supabase.from('posts').select('*').eq('user_id', userId).order('created_at', { ascending: false });
-        const followersCount = await getFollowersCount(profile.id);
-        const followingCount = await getFollowingCount(profile.id);
-        container.innerHTML = `
-            <div class="profile-container">
-                <div class="profile-header">
-                    <img class="profile-avatar" src="${profile.avatar_url}">
-                    <div class="profile-info">
-                        <h2>${profile.username} ${isOwn ? '<button class="edit-profile-btn" id="editProfileBtn">Edit Profil</button> <button class="create-post-btn" id="createPostProfileBtn">+ Postingan</button>' : `<button class="follow-btn ${following ? 'following' : ''}" id="followBtn">${following ? 'Following' : 'Follow'}</button> <button class="chat-btn" id="chatDirectBtn">Chat</button>`}</h2>
-                        <div class="profile-stats"><div class="stat"><div class="stat-number">${posts.data?.length || 0}</div><div>Postingan</div></div><div class="stat"><div class="stat-number">${followersCount}</div><div>Followers</div></div><div class="stat"><div class="stat-number">${followingCount}</div><div>Following</div></div></div>
-                        <div class="bio">${profile.bio || 'Tidak ada bio'}</div>
-                    </div>
-                </div>
-                <div class="post-grid" id="profilePostGrid"></div>
+    function viewStory(story) {
+        const modalDiv = document.createElement('div');
+        modalDiv.className = 'story-viewer';
+        modalDiv.innerHTML = `
+            <div class="close-story"><i class="fas fa-times"></i></div>
+            <div class="story-content">
+                ${story.media_type === 'video' ? `<video controls autoplay src="${story.media_url}"></video>` : `<img src="${story.media_url}">`}
             </div>
         `;
+        document.body.appendChild(modalDiv);
+        modalDiv.querySelector('.close-story').onclick = () => modalDiv.remove();
+        modalDiv.onclick = (e) => { if (e.target === modalDiv) modalDiv.remove(); };
+    }
+
+    async function renderProfile(container, userId) {
+        const { data: profileUser } = await supabase.from('users').select('*').eq('id', userId).single();
+        if (!profileUser) return;
+        const userPosts = await getUserPosts(userId);
+        const isOwn = profileUser.id === currentUser.id;
+        const following = await isFollowing(profileUser.id);
+        const followersCount = await getFollowersCount(profileUser.id);
+        const followingCount = await getFollowingCount(profileUser.id);
+        container.innerHTML = `<div class="profile-container">
+            <div class="profile-header">
+                <img class="profile-avatar" src="${profileUser.avatar_url}">
+                <div class="profile-info">
+                    <h2>${profileUser.username}
+                        ${isOwn ? '<button class="edit-profile-btn" id="editProfileBtn">Edit Profil</button> <button class="create-post-btn" id="createPostProfileBtn">+ Postingan</button>' : `<button class="follow-btn ${following ? 'following' : ''}" id="followBtn">${following ? 'Following' : 'Follow'}</button> <button class="chat-btn" id="chatDirectBtn">Chat</button>`}
+                    </h2>
+                    <div class="profile-stats">
+                        <div class="stat"><div class="stat-number">${userPosts.length}</div><div>Postingan</div></div>
+                        <div class="stat"><div class="stat-number">${followersCount}</div><div>Followers</div></div>
+                        <div class="stat"><div class="stat-number">${followingCount}</div><div>Following</div></div>
+                    </div>
+                    <div class="bio">${profileUser.bio || 'Tidak ada bio'}</div>
+                </div>
+            </div>
+            <div class="post-grid" id="profilePostGrid"></div>
+        </div>`;
         const grid = document.getElementById('profilePostGrid');
-        (posts.data || []).forEach(p => {
+        userPosts.forEach(p => {
             const img = document.createElement('img');
             img.src = p.media_url;
             img.className = 'post-thumb';
-            img.onclick = () => alert(`Caption: ${p.caption || ''}`);
+            img.onclick = () => alert(`Caption: ${p.caption}`);
             grid.appendChild(img);
         });
         if (isOwn) {
-            document.getElementById('editProfileBtn').onclick = () => {
-                document.getElementById('editUsername').value = currentUser.username;
-                document.getElementById('editBio').value = currentUser.bio || '';
-                document.getElementById('editProfileModal').style.display = 'flex';
-            };
+            document.getElementById('editProfileBtn').onclick = () => openEditProfileModal();
             document.getElementById('createPostProfileBtn').onclick = () => document.getElementById('postModal').style.display = 'flex';
         } else {
-            document.getElementById('followBtn').onclick = () => following ? unfollowUser(profile.id) : followUser(profile.id);
-            document.getElementById('chatDirectBtn').onclick = () => { selectedChatUserId = profile.id; currentView = 'chatRoom'; renderCurrentView(); };
+            document.getElementById('followBtn').onclick = async () => {
+                if (following) await unfollowUser(profileUser.id);
+                else await followUser(profileUser.id);
+                await renderProfile(container, userId);
+            };
+            document.getElementById('chatDirectBtn').onclick = () => { selectedChatUserId = profileUser.id; currentView = 'chatRoom'; renderCurrentView(); };
         }
     }
 
-    async function renderChatList(container) {
-        const { data: usersList } = await supabase.from('users').select('*').neq('id', currentUser.id);
-        container.innerHTML = `<div class="chat-container"><h3>Chat dengan pengguna lain</h3><div class="user-list">${(usersList || []).map(u => `<div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #dbdbdb; cursor:pointer;" onclick="startChat('${u.id}')"><img src="${u.avatar_url}" width="40" style="border-radius:50%"><span>${u.username}</span></div>`).join('')}</div></div>`;
+    function openEditProfileModal() {
+        document.getElementById('editUsername').value = currentUser.username;
+        document.getElementById('editBio').value = currentUser.bio || '';
+        document.getElementById('editProfileModal').style.display = 'flex';
+        let selectedFile = null;
+        document.getElementById('profilePictureInput').onchange = (e) => { if (e.target.files[0]) selectedFile = e.target.files[0]; };
+        document.getElementById('saveProfileBtn').onclick = async () => {
+            const newUsername = document.getElementById('editUsername').value.trim();
+            const newBio = document.getElementById('editBio').value;
+            await updateProfile(newUsername, newBio, selectedFile);
+            document.getElementById('editProfileModal').style.display = 'none';
+            renderMainApp();
+        };
+        document.getElementById('cancelEditProfileBtn').onclick = () => document.getElementById('editProfileModal').style.display = 'none';
     }
+
+    async function renderChatList(container) {
+        const { data: otherUsers } = await supabase.from('users').select('*').neq('id', currentUser.id);
+        container.innerHTML = `<div class="chat-container"><h3>Chat dengan pengguna lain</h3><div class="user-list">${otherUsers.map(u => `
+            <div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #dbdbdb; cursor:pointer;" onclick="startChat('${u.id}')">
+                <img src="${u.avatar_url}" style="width:40px;height:40px;border-radius:50%;"><span>${u.username}</span>
+            </div>`).join('')}</div></div>`;
+    }
+
     window.startChat = (userId) => { selectedChatUserId = userId; currentView = 'chatRoom'; renderCurrentView(); };
 
     async function renderChatRoom(container) {
-        const partner = await getUserProfile(selectedChatUserId);
+        const { data: partner } = await supabase.from('users').select('*').eq('id', selectedChatUserId).single();
         if (!partner) { currentView = 'chat'; renderCurrentView(); return; }
         const chatRoomId = [currentUser.id, partner.id].sort().join('_');
         const messages = await getMessages(chatRoomId);
-        let html = `
-            <div class="chat-room">
-                <div class="chat-header"><strong>${partner.username}</strong><button class="delete-chat-btn" onclick="deleteChatRoom('${partner.id}')">Hapus Chat</button></div>
-                <div class="chat-messages" id="chatMessages">${messages.map(m => `<div class="message ${m.sender_id === currentUser.id ? 'own' : ''}" data-id="${m.id}"><strong>${m.sender_id === currentUser.id ? 'Anda' : partner.username}</strong><br>${m.text}${m.sender_id === currentUser.id ? `<span class="delete-msg" onclick="deleteMessage('${m.id}')"><i class="fas fa-trash-alt"></i></span>` : ''}</div>`).join('')}</div>
-                <div class="chat-input"><input type="text" id="chatMsgInput" placeholder="Pesan..."><button id="sendChatBtn">Kirim</button></div>
-                <button onclick="backToChatList()" style="margin:8px;">Kembali</button>
+        let html = `<div class="chat-room">
+            <div class="chat-header">
+                <strong>${partner.username}</strong>
+                <button class="delete-chat-btn" onclick="deleteChatRoomById('${partner.id}')">Hapus Chat</button>
             </div>
-        `;
+            <div class="chat-messages" id="chatMessages">
+                ${messages.map((m, idx) => `
+                    <div class="message ${m.sender_id === currentUser.id ? 'own' : ''}" data-msg-id="${m.id}">
+                        <strong>${m.sender_id === currentUser.id ? 'Anda' : partner.username}</strong><br>
+                        ${m.text}
+                        ${m.sender_id === currentUser.id ? `<span class="delete-msg" onclick="deleteMessageById('${m.id}')"><i class="fas fa-trash-alt"></i></span>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatMessageInput" placeholder="Pesan...">
+                <button id="sendMsgBtn">Kirim</button>
+            </div>
+            <button onclick="backToChatList()" style="margin:8px;">Kembali</button>
+        </div>`;
         container.innerHTML = html;
-        document.getElementById('sendChatBtn').onclick = async () => {
-            const input = document.getElementById('chatMsgInput');
-            const text = input.value.trim();
+        document.getElementById('sendMsgBtn').onclick = async () => {
+            const inp = document.getElementById('chatMessageInput');
+            const text = inp.value.trim();
             if (text) {
                 await sendMessage(partner.id, text);
-                input.value = '';
-                renderChatRoom(container);
+                await renderChatRoom(container);
             }
         };
         const msgDiv = document.getElementById('chatMessages');
         if (msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
     }
-    window.backToChatList = () => { currentView = 'chat'; renderCurrentView(); };
 
-    // INIT
+    window.deleteMessageById = async (messageId) => {
+        await deleteMessage(messageId);
+        await renderChatRoom(document.getElementById('viewContainer'));
+    };
+    window.deleteChatRoomById = async (partnerId) => {
+        if (confirm('Hapus semua pesan?')) {
+            await deleteChatRoom(partnerId);
+            backToChatList();
+        }
+    };
+    window.backToChatList = () => { currentView = 'chat'; renderCurrentView(); };
+    window.deletePostById = async (postId) => {
+        if (confirm('Hapus postingan?')) {
+            await deletePost(postId);
+            await renderCurrentView();
+        }
+    };
+    window.addCommentById = async (postId) => {
+        const input = document.getElementById(`commentInput-${postId}`);
+        const text = input.value.trim();
+        if (text) {
+            await addComment(postId, text);
+            await renderCurrentView();
+        }
+    };
+    window.deleteCommentById = async (postId, commentId) => {
+        await deleteComment(postId, commentId);
+        await renderCurrentView();
+    };
+    window.editCommentById = async (postId, commentId) => {
+        const newText = prompt('Edit komentar:');
+        if (newText) {
+            await editComment(postId, commentId, newText);
+            await renderCurrentView();
+        }
+    };
+
+    let cropCallback = null;
+    function cropImage(file, callback) { /* implementasi crop, disederhanakan */ callback(URL.createObjectURL(file)); }
+    window.cropImage = cropImage;
+
+    // ========== INIT ==========
     (async () => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = await loadCurrentUser();
         if (user) {
-            await loadCurrentUser();
             renderMainApp();
         } else {
             showAuthForm();
