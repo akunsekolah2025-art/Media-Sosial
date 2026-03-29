@@ -64,19 +64,36 @@
         .follow-btn.following { background: #efefef; color: #262626; }
         .post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
         .post-thumb { aspect-ratio: 1 / 1; object-fit: cover; width: 100%; cursor: pointer; }
-        .chat-room { background: white; border: 1px solid #dbdbdb; border-radius: 12px; height: 70vh; display: flex; flex-direction: column; }
+        .chat-room {
+            background: white; border: 1px solid #dbdbdb; border-radius: 12px; height: 70vh;
+            display: flex; flex-direction: column;
+        }
         .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-        .message { max-width: 70%; padding: 8px 12px; border-radius: 18px; background: #efefef; align-self: flex-start; position: relative; word-break: break-word; }
-        .message.own { background: #0095f6; color: white; align-self: flex-end; }
+        .message {
+            max-width: 70%; padding: 8px 12px; border-radius: 18px; background: #efefef;
+            align-self: flex-start; position: relative; word-break: break-word;
+        }
+        .message.own {
+            background: #0095f6; color: white; align-self: flex-end;
+        }
         .message .delete-msg {
             position: absolute; top: -8px; right: -8px; background: rgba(0,0,0,0.5); color: white;
             border-radius: 50%; width: 20px; height: 20px; font-size: 10px; display: flex;
             align-items: center; justify-content: center; cursor: pointer; opacity: 0;
         }
         .message:hover .delete-msg { opacity: 1; }
+        .message-time {
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.7;
+            text-align: right;
+        }
         .chat-input { display: flex; border-top: 1px solid #dbdbdb; padding: 12px; gap: 8px; }
         .chat-input input { flex: 1; border: none; outline: none; padding: 8px; }
-        .chat-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #dbdbdb; }
+        .chat-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; border-bottom: 1px solid #dbdbdb;
+        }
         .delete-chat-btn { background: #ed4956; color: white; border: none; padding: 4px 12px; border-radius: 8px; cursor: pointer; }
         .modal {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -104,6 +121,20 @@
         .badge-gold { color: #ffd700; }
         .badge-blue { color: #1da1f2; }
         .admin-badge-btn { background: #ffd700; color: #262626; margin-left: 10px; font-size: 0.8rem; padding: 2px 8px; border-radius: 20px; }
+        .unread-dot {
+            background: #0095f6;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 8px;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0; max-width: 100%; padding: 1rem 1rem 80px 1rem; }
@@ -137,6 +168,7 @@
     let selectedChatUserId = null;
     let showSearchResults = false;
     let isAdmin = false;
+    let realtimeSubscription = null;
 
     // ========== ADMIN ACCOUNT CREATION ==========
     async function ensureAdminAccount() {
@@ -151,12 +183,10 @@
             if (existingAdmin) {
                 if (existingAdmin.badge !== 'gold') {
                     await supabaseClient.from('users').update({ badge: 'gold' }).eq('id', existingAdmin.id);
-                    console.log("Admin badge updated to gold");
                 }
                 return;
             }
             
-            // Cek apakah admin ada di auth.users (mungkin belum terdaftar)
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user && user.email === 'admin@gmail.com') {
                 await supabaseClient.from('users').insert({
@@ -167,17 +197,14 @@
                     avatar_url: 'https://picsum.photos/id/100/200/200',
                     badge: 'gold'
                 });
-                console.log("Admin profile created from existing auth user.");
                 return;
             }
             
-            // Buat akun baru
             const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
                 email: 'admin@gmail.com',
                 password: '123456'
             });
             if (signUpError) throw signUpError;
-            
             await supabaseClient.from('users').insert({
                 id: authData.user.id,
                 email: 'admin@gmail.com',
@@ -186,13 +213,12 @@
                 avatar_url: 'https://picsum.photos/id/100/200/200',
                 badge: 'gold'
             });
-            console.log("Admin account created successfully");
         } catch (error) {
             console.error("Admin creation error:", error);
         }
     }
 
-    // ========== PERBAIKAN LOGIN: Jika user ada di Auth tapi belum di users, buat otomatis ==========
+    // ========== USER PROFILE AUTO-CREATION ==========
     async function ensureUserProfile(userId, email, username) {
         const { data: existing, error } = await supabaseClient
             .from('users')
@@ -225,11 +251,10 @@
             .select()
             .single();
         if (insertError) throw insertError;
-        console.log(`Created profile for user ${userId}`);
         return newProfile;
     }
 
-    // ========== AUTH FUNCTIONS ==========
+    // ========== AUTH ==========
     async function registerUser(email, password, username) {
         try {
             const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
@@ -246,7 +271,6 @@
             if (insertError) throw insertError;
             return { success: true };
         } catch (error) {
-            console.error("Register error:", error);
             return { success: false, error: error.message };
         }
     }
@@ -263,6 +287,7 @@
 
     async function logoutUser() {
         await supabaseClient.auth.signOut();
+        if (realtimeSubscription) realtimeSubscription.unsubscribe();
         currentUser = null;
         isAdmin = false;
         showAuthForm();
@@ -272,18 +297,16 @@
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) return null;
-            
             const profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.username);
             currentUser = profile;
             isAdmin = (currentUser.email === 'admin@gmail.com');
             return currentUser;
         } catch (error) {
-            console.error("Load user error:", error);
             return null;
         }
     }
 
-    // ========== DATABASE OPERATIONS ==========
+    // ========== POST & STORY (dengan RLS dinonaktifkan, seharusnya berhasil) ==========
     async function createPost(mediaFile, caption) {
         if (!currentUser) throw new Error("Not logged in");
         const fileName = `posts/${Date.now()}_${mediaFile.name}`;
@@ -323,7 +346,6 @@
             if (error) throw error;
             return data;
         } catch (error) {
-            console.error("Feed error:", error);
             return [];
         }
     }
@@ -369,6 +391,7 @@
         await supabaseClient.from('posts').delete().eq('id', postId);
     }
 
+    // ========== FOLLOW ==========
     async function followUser(targetUserId) {
         await supabaseClient.from('follows').insert({ follower_id: currentUser.id, following_id: targetUserId });
     }
@@ -392,11 +415,13 @@
         return count;
     }
 
+    // ========== SEARCH ==========
     async function searchUsers(query) {
         const { data } = await supabaseClient.from('users').select('*').ilike('username', `%${query}%`);
         return data || [];
     }
 
+    // ========== PROFILE UPDATE ==========
     async function updateProfile(username, bio, newAvatarFile) {
         let avatarUrl = currentUser.avatar_url;
         if (newAvatarFile) {
@@ -411,27 +436,33 @@
         currentUser.avatar_url = avatarUrl;
     }
 
+    // ========== ADMIN BADGE ==========
     async function giveBlueBadge(targetUserId) {
         if (!isAdmin) throw new Error("Unauthorized");
         await supabaseClient.from('users').update({ badge: 'blue' }).eq('id', targetUserId);
-        await renderCurrentView();
     }
 
     async function removeBlueBadge(targetUserId) {
         if (!isAdmin) throw new Error("Unauthorized");
         await supabaseClient.from('users').update({ badge: null }).eq('id', targetUserId);
-        await renderCurrentView();
     }
 
+    // ========== CHAT (dengan realtime, timestamp, unread) ==========
     async function sendMessage(receiverId, text) {
         const chatRoomId = [currentUser.id, receiverId].sort().join('_');
         await supabaseClient.from('messages').insert({
-            chat_room_id: chatRoomId, sender_id: currentUser.id, receiver_id: receiverId, text
+            chat_room_id: chatRoomId,
+            sender_id: currentUser.id,
+            receiver_id: receiverId,
+            text: text
         });
     }
 
     async function getMessages(chatRoomId) {
-        const { data, error } = await supabaseClient.from('messages').select('*').eq('chat_room_id', chatRoomId).order('created_at', { ascending: true });
+        const { data, error } = await supabaseClient.from('messages')
+            .select('*')
+            .eq('chat_room_id', chatRoomId)
+            .order('created_at', { ascending: true });
         if (error) return [];
         return data;
     }
@@ -445,6 +476,70 @@
         await supabaseClient.from('messages').delete().eq('chat_room_id', chatRoomId);
     }
 
+    // Last read management (table chat_reads)
+    async function ensureChatReadsTable() {
+        // Buat tabel jika belum ada (hanya sekali)
+        try {
+            await supabaseClient.rpc('create_chat_reads_table_if_not_exists');
+        } catch (e) {
+            // fallback: buat langsung via SQL (user harus punya izin)
+            console.warn("Pastikan tabel chat_reads ada: CREATE TABLE IF NOT EXISTS chat_reads (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), user_id UUID REFERENCES users(id) ON DELETE CASCADE, chat_room_id TEXT NOT NULL, last_read_at TIMESTAMPTZ DEFAULT NOW(), UNIQUE(user_id, chat_room_id));");
+        }
+    }
+
+    async function updateLastRead(chatRoomId) {
+        const { data: existing } = await supabaseClient
+            .from('chat_reads')
+            .select('id')
+            .eq('user_id', currentUser.id)
+            .eq('chat_room_id', chatRoomId)
+            .maybeSingle();
+        if (existing) {
+            await supabaseClient
+                .from('chat_reads')
+                .update({ last_read_at: new Date().toISOString() })
+                .eq('id', existing.id);
+        } else {
+            await supabaseClient
+                .from('chat_reads')
+                .insert({
+                    user_id: currentUser.id,
+                    chat_room_id: chatRoomId,
+                    last_read_at: new Date().toISOString()
+                });
+        }
+    }
+
+    async function getUnreadChatRooms() {
+        const { data: allMessages } = await supabaseClient
+            .from('messages')
+            .select('chat_room_id, created_at, sender_id')
+            .or(`sender_id.eq.${currentUser.id},receiver_id.eq.${currentUser.id}`);
+        const { data: reads } = await supabaseClient
+            .from('chat_reads')
+            .select('chat_room_id, last_read_at')
+            .eq('user_id', currentUser.id);
+        const lastReadMap = {};
+        if (reads) reads.forEach(r => { lastReadMap[r.chat_room_id] = new Date(r.last_read_at); });
+        const unread = new Set();
+        allMessages.forEach(msg => {
+            const room = msg.chat_room_id;
+            if (msg.sender_id !== currentUser.id) { // only messages from others count as unread
+                const lastRead = lastReadMap[room] || new Date(0);
+                if (new Date(msg.created_at) > lastRead) {
+                    unread.add(room);
+                }
+            }
+        });
+        return unread;
+    }
+
+    async function getChatListUnreadIndicator() {
+        const unreadRooms = await getUnreadChatRooms();
+        return unreadRooms;
+    }
+
+    // ========== STORY ==========
     async function getActiveStories() {
         const cutoff = new Date();
         cutoff.setHours(cutoff.getHours() - 24);
@@ -453,14 +548,11 @@
             .select('*, users(username, avatar_url)')
             .gte('created_at', cutoff.toISOString())
             .order('created_at', { ascending: false });
-        if (error) {
-            console.error("Story fetch error:", error);
-            return [];
-        }
+        if (error) return [];
         return data || [];
     }
 
-    // ========== UI FUNCTIONS ==========
+    // ========== UI RENDER ==========
     function showAuthForm() {
         const app = document.getElementById('app');
         app.innerHTML = `
@@ -535,8 +627,8 @@
                 <div class="nav-item" data-nav="chat"><i class="fas fa-comment-dots"></i><span>Chat</span></div>
                 <div class="nav-item logout-btn" id="logoutBtnMobile"><i class="fas fa-sign-out-alt"></i><span>Logout</span></div>
             </div>
-            <div id="postModal" class="modal"><div class="modal-content"><h3>Buat Postingan</h3><input type="text" id="postCaption" placeholder="Caption..."><input type="file" id="postMedia" accept="image/*,video/*"><button id="submitPostBtn">Upload</button></div></div>
-            <div id="storyModal" class="modal"><div class="modal-content"><h3>Upload Story (24 jam)</h3><input type="file" id="storyMedia" accept="image/*,video/*"><button id="submitStoryBtn">Upload</button></div></div>
+            <div id="postModal" class="modal"><div class="modal-content"><h3>Buat Postingan</h3><input type="text" id="postCaption" placeholder="Caption..."><input type="file" id="postMedia" accept="image/*,video/*"><div class="modal-buttons"><button id="submitPostBtn">Upload</button><button id="cancelPostBtn">Batal</button></div></div></div>
+            <div id="storyModal" class="modal"><div class="modal-content"><h3>Upload Story (24 jam)</h3><input type="file" id="storyMedia" accept="image/*,video/*"><div class="modal-buttons"><button id="submitStoryBtn">Upload</button><button id="cancelStoryBtn">Batal</button></div></div></div>
             <div id="editProfileModal" class="modal"><div class="modal-content"><h3>Edit Profil</h3><label>Username</label><input type="text" id="editUsername"><label>Bio</label><textarea id="editBio" rows="3"></textarea><label>Foto Profil</label><input type="file" id="profilePictureInput" accept="image/*"><div class="modal-buttons"><button id="saveProfileBtn">Simpan</button><button id="cancelEditProfileBtn">Batal</button></div></div></div>
         `;
         if (window.innerWidth <= 768) document.getElementById('bottomNav').style.display = 'flex';
@@ -558,13 +650,10 @@
                     await createPost(file, caption);
                     document.getElementById('postModal').style.display = 'none';
                     renderCurrentView();
-                } catch (err) { 
-                    alert("Upload gagal: " + err.message);
-                    console.error(err);
-                    console.log("Untuk memperbaiki error RLS, jalankan SQL berikut di Supabase SQL Editor:\nALTER TABLE posts DISABLE ROW LEVEL SECURITY;\nALTER TABLE stories DISABLE ROW LEVEL SECURITY;");
-                }
+                } catch (err) { alert("Upload gagal: " + err.message); }
             }
         };
+        document.getElementById('cancelPostBtn').onclick = () => document.getElementById('postModal').style.display = 'none';
         document.getElementById('submitStoryBtn').onclick = async () => {
             const file = document.getElementById('storyMedia').files[0];
             if (file) {
@@ -573,13 +662,10 @@
                     document.getElementById('storyModal').style.display = 'none';
                     alert('Story terupload!');
                     renderCurrentView();
-                } catch (err) { 
-                    alert("Upload story gagal: " + err.message);
-                    console.error(err);
-                    console.log("Untuk memperbaiki error RLS, jalankan SQL berikut di Supabase SQL Editor:\nALTER TABLE stories DISABLE ROW LEVEL SECURITY;");
-                }
+                } catch (err) { alert("Upload story gagal: " + err.message); }
             }
         };
+        document.getElementById('cancelStoryBtn').onclick = () => document.getElementById('storyModal').style.display = 'none';
         document.getElementById('searchInput').addEventListener('input', async (e) => {
             const query = e.target.value.trim().toLowerCase();
             if (query === '') { showSearchResults = false; renderCurrentView(); return; }
@@ -666,11 +752,18 @@
         document.querySelectorAll('.comment-toggle').forEach(btn => btn.addEventListener('click', () => { let div = document.getElementById(`comments-${btn.dataset.postid}`); div.style.display = div.style.display === 'none' ? 'block' : 'none'; }));
     }
 
-    window.viewProfile = (userId) => { currentView = 'profile'; renderMainApp(); setTimeout(() => renderProfile(document.getElementById('viewContainer'), userId), 0); };
+    window.viewProfile = (userId) => {
+        currentView = 'profile';
+        renderMainApp().then(() => {
+            renderProfile(document.getElementById('viewContainer'), userId);
+        });
+    };
+
     window.viewStoryById = async (userId) => {
         const { data } = await supabaseClient.from('stories').select('*').eq('user_id', userId).order('created_at', { ascending: false }).limit(1);
         if (data && data[0]) viewStory(data[0]);
     };
+
     function viewStory(story) {
         const modalDiv = document.createElement('div');
         modalDiv.className = 'story-viewer';
@@ -749,12 +842,29 @@
 
     async function renderChatList(container) {
         const { data: otherUsers } = await supabaseClient.from('users').select('*').neq('id', currentUser.id);
-        container.innerHTML = `<div class="chat-container"><h3>Chat dengan pengguna lain</h3><div class="user-list">${otherUsers.map(u => `<div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #dbdbdb; cursor:pointer;" onclick="startChat('${u.id}')"><img src="${u.avatar_url}" style="width:40px;height:40px;border-radius:50%;"><span>${u.username}</span></div>`).join('')}</div></div>`;
+        const unreadRooms = await getUnreadChatRooms();
+        const roomMap = new Map();
+        unreadRooms.forEach(room => roomMap.set(room, true));
+        container.innerHTML = `<div class="chat-container"><h3>Chat dengan pengguna lain</h3><div class="user-list">${otherUsers.map(u => {
+            const roomId = [currentUser.id, u.id].sort().join('_');
+            const unreadDot = roomMap.has(roomId) ? '<span class="unread-dot"></span>' : '';
+            return `<div style="display:flex; align-items:center; gap:12px; padding:12px; border-bottom:1px solid #dbdbdb; cursor:pointer;" onclick="startChat('${u.id}')">
+                <img src="${u.avatar_url}" style="width:40px;height:40px;border-radius:50%;"><span>${u.username}</span>${unreadDot}
+            </div>`;
+        }).join('')}</div></div>`;
     }
 
-    window.startChat = (userId) => { selectedChatUserId = userId; currentView = 'chatRoom'; renderCurrentView(); };
+    window.startChat = async (userId) => {
+        selectedChatUserId = userId;
+        currentView = 'chatRoom';
+        await renderCurrentView();
+        // setelah chat terbuka, update last read
+        const roomId = [currentUser.id, selectedChatUserId].sort().join('_');
+        await updateLastRead(roomId);
+    };
 
     async function renderChatRoom(container) {
+        if (realtimeSubscription) realtimeSubscription.unsubscribe();
         const { data: partner } = await supabaseClient.from('users').select('*').eq('id', selectedChatUserId).single();
         if (!partner) { currentView = 'chat'; renderCurrentView(); return; }
         const chatRoomId = [currentUser.id, partner.id].sort().join('_');
@@ -762,7 +872,15 @@
         let html = `<div class="chat-room">
             <div class="chat-header"><strong>${partner.username}</strong><button class="delete-chat-btn" onclick="deleteChatRoomById('${partner.id}')">Hapus Chat</button></div>
             <div class="chat-messages" id="chatMessages">
-                ${messages.map(m => `<div class="message ${m.sender_id === currentUser.id ? 'own' : ''}" data-msg-id="${m.id}"><strong>${m.sender_id === currentUser.id ? 'Anda' : partner.username}</strong><br>${m.text}${m.sender_id === currentUser.id ? `<span class="delete-msg" onclick="deleteMessageById('${m.id}')"><i class="fas fa-trash-alt"></i></span>` : ''}</div>`).join('')}
+                ${messages.map(m => {
+                    const time = new Date(m.created_at).toLocaleString();
+                    return `<div class="message ${m.sender_id === currentUser.id ? 'own' : ''}" data-msg-id="${m.id}">
+                        <strong>${m.sender_id === currentUser.id ? 'Anda' : partner.username}</strong><br>
+                        ${m.text}
+                        <div class="message-time">${time}</div>
+                        ${m.sender_id === currentUser.id ? `<span class="delete-msg" onclick="deleteMessageById('${m.id}')"><i class="fas fa-trash-alt"></i></span>` : ''}
+                    </div>`;
+                }).join('')}
             </div>
             <div class="chat-input"><input type="text" id="chatMessageInput" placeholder="Pesan..."><button id="sendMsgBtn">Kirim</button></div>
             <button onclick="backToChatList()" style="margin:8px;">Kembali</button>
@@ -770,14 +888,55 @@
         container.innerHTML = html;
         document.getElementById('sendMsgBtn').onclick = async () => {
             const text = document.getElementById('chatMessageInput').value.trim();
-            if (text) { await sendMessage(partner.id, text); await renderChatRoom(container); }
+            if (text) {
+                await sendMessage(partner.id, text);
+                document.getElementById('chatMessageInput').value = '';
+                await renderChatRoom(container);
+                // setelah mengirim, update last read (pesan sendiri tidak perlu unread)
+                await updateLastRead(chatRoomId);
+            }
         };
+        // realtime subscription
+        realtimeSubscription = supabaseClient
+            .channel('messages')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, async (payload) => {
+                const newMsg = payload.new;
+                if (newMsg.chat_room_id === chatRoomId) {
+                    // append message to chat
+                    const msgDiv = document.getElementById('chatMessages');
+                    const time = new Date(newMsg.created_at).toLocaleString();
+                    const msgHtml = `<div class="message ${newMsg.sender_id === currentUser.id ? 'own' : ''}" data-msg-id="${newMsg.id}">
+                        <strong>${newMsg.sender_id === currentUser.id ? 'Anda' : partner.username}</strong><br>
+                        ${newMsg.text}
+                        <div class="message-time">${time}</div>
+                        ${newMsg.sender_id === currentUser.id ? `<span class="delete-msg" onclick="deleteMessageById('${newMsg.id}')"><i class="fas fa-trash-alt"></i></span>` : ''}
+                    </div>`;
+                    msgDiv.insertAdjacentHTML('beforeend', msgHtml);
+                    msgDiv.scrollTop = msgDiv.scrollHeight;
+                    // if message from other and we are in this chat, mark as read immediately
+                    if (newMsg.sender_id !== currentUser.id) {
+                        await updateLastRead(chatRoomId);
+                    }
+                } else {
+                    // update chat list unread indicator
+                    if (currentView === 'chat') await renderCurrentView();
+                }
+            })
+            .subscribe();
         const msgDiv = document.getElementById('chatMessages');
         if (msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
     }
 
-    window.deleteMessageById = async (messageId) => { await deleteMessage(messageId); await renderChatRoom(document.getElementById('viewContainer')); };
-    window.deleteChatRoomById = async (partnerId) => { if (confirm('Hapus semua pesan?')) { await deleteChatRoom(partnerId); backToChatList(); } };
+    window.deleteMessageById = async (messageId) => {
+        await deleteMessage(messageId);
+        await renderChatRoom(document.getElementById('viewContainer'));
+    };
+    window.deleteChatRoomById = async (partnerId) => {
+        if (confirm('Hapus semua pesan?')) {
+            await deleteChatRoom(partnerId);
+            backToChatList();
+        }
+    };
     window.backToChatList = () => { currentView = 'chat'; renderCurrentView(); };
     window.deletePostById = async (postId) => { if (confirm('Hapus postingan?')) { await deletePost(postId); await renderCurrentView(); } };
     window.addCommentById = async (postId) => {
@@ -790,13 +949,13 @@
         const newText = prompt('Edit komentar:');
         if (newText) { await editComment(postId, commentId, newText); await renderCurrentView(); }
     };
-
     window.giveBlueBadge = giveBlueBadge;
     window.removeBlueBadge = removeBlueBadge;
 
     // ========== INIT ==========
     (async () => {
-        await ensureAdminAccount(); // buat admin jika belum ada
+        await ensureAdminAccount();
+        await ensureChatReadsTable(); // optional, bisa diabaikan jika tabel belum ada
         const user = await loadCurrentUser();
         if (user) renderMainApp();
         else showAuthForm();
