@@ -6,7 +6,7 @@
     <title>ANPRATA - MediaSosial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== STYLE SAMA SEPERTI SEBELUMNYA ========== */
+        /* ========== STYLE (SAMA SEPERTI SEBELUMNYA) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background-color: #fafafa; }
         .app-container { display: flex; min-height: 100vh; }
@@ -267,6 +267,7 @@
     async function createPost(mediaFile, caption) {
         if (!currentUser) throw new Error("Not logged in");
         const fileName = `posts/${Date.now()}_${mediaFile.name}`;
+        // Upload ke bucket 'media'
         const { error: uploadError } = await supabaseClient.storage.from('media').upload(fileName, mediaFile);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabaseClient.storage.from('media').getPublicUrl(fileName);
