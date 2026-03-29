@@ -104,15 +104,6 @@
         .badge-gold { color: #ffd700; }
         .badge-blue { color: #1da1f2; }
         .admin-badge-btn { background: #ffd700; color: #262626; margin-left: 10px; font-size: 0.8rem; padding: 2px 8px; border-radius: 20px; }
-        .error-message {
-            background: #fee2e2;
-            border-left: 4px solid #ef4444;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 8px;
-            color: #b91c1c;
-            font-size: 0.9rem;
-        }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0; max-width: 100%; padding: 1rem 1rem 80px 1rem; }
@@ -147,29 +138,9 @@
     let showSearchResults = false;
     let isAdmin = false;
 
-    // ========== FUNGSI RESET DATABASE ==========
-    window.resetDatabase = async function() {
-        if (!confirm("⚠️ PERINGATAN: Ini akan menghapus SEMUA data (akun, postingan, story, follow, chat). Lanjutkan?")) return;
-        try {
-            await supabaseClient.from('posts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            await supabaseClient.from('follows').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            await supabaseClient.from('messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            await supabaseClient.from('stories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            await supabaseClient.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-            console.log("✅ Semua data telah dihapus.");
-            await supabaseClient.auth.signOut();
-            alert("Database telah direset. Halaman akan dimuat ulang dan akun admin akan dibuat otomatis.");
-            location.reload();
-        } catch (err) {
-            console.error("Reset error:", err);
-            alert("Reset gagal: " + err.message + "\nPastikan RLS dinonaktifkan atau Anda memiliki izin delete.");
-        }
-    };
-
     // ========== ADMIN ACCOUNT CREATION ==========
     async function ensureAdminAccount() {
         try {
-            // Cek apakah admin sudah ada di tabel users
             const { data: existingAdmin, error: checkError } = await supabaseClient
                 .from('users')
                 .select('*')
@@ -178,7 +149,6 @@
             
             if (checkError && checkError.code !== 'PGRST116') throw checkError;
             if (existingAdmin) {
-                // Pastikan admin memiliki badge gold (mungkin belum karena update manual)
                 if (existingAdmin.badge !== 'gold') {
                     await supabaseClient.from('users').update({ badge: 'gold' }).eq('id', existingAdmin.id);
                     console.log("Admin badge updated to gold");
@@ -189,7 +159,6 @@
             // Cek apakah admin ada di auth.users (mungkin belum terdaftar)
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (user && user.email === 'admin@gmail.com') {
-                // User sudah login sebagai admin, buat profil di tabel users
                 await supabaseClient.from('users').insert({
                     id: user.id,
                     email: user.email,
@@ -202,7 +171,7 @@
                 return;
             }
             
-            // Tidak ada admin sama sekali, buat akun baru
+            // Buat akun baru
             const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
                 email: 'admin@gmail.com',
                 password: '123456'
@@ -233,7 +202,6 @@
         
         if (error && error.code !== 'PGRST116') throw error;
         if (existing) {
-            // Jika user adalah admin dan badge belum gold, perbaiki
             if (email === 'admin@gmail.com' && existing.badge !== 'gold') {
                 await supabaseClient.from('users').update({ badge: 'gold' }).eq('id', userId);
                 existing.badge = 'gold';
@@ -241,7 +209,6 @@
             return existing;
         }
         
-        // Jika belum ada, buat profil baru
         const newUsername = username || email.split('@')[0];
         const avatarUrl = `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/200/200`;
         const badge = (email === 'admin@gmail.com') ? 'gold' : null;
@@ -328,12 +295,7 @@
             user_id: currentUser.id, caption, media_url: publicUrl, media_type: mediaType,
             likes: [], comments: []
         });
-        if (insertError) {
-            if (insertError.message.includes("row-level security policy")) {
-                throw new Error("Gagal menyimpan postingan karena kebijakan keamanan (RLS). Solusi: Nonaktifkan RLS pada tabel posts di Supabase, atau buat policy yang sesuai. Lihat instruksi di konsol.");
-            }
-            throw insertError;
-        }
+        if (insertError) throw insertError;
     }
 
     async function uploadStory(mediaFile) {
@@ -345,12 +307,7 @@
         const { error: insertError } = await supabaseClient.from('stories').insert({
             user_id: currentUser.id, media_url: publicUrl, media_type: mediaType
         });
-        if (insertError) {
-            if (insertError.message.includes("row-level security policy")) {
-                throw new Error("Gagal menyimpan story karena kebijakan keamanan (RLS). Solusi: Nonaktifkan RLS pada tabel stories di Supabase, atau buat policy yang sesuai.");
-            }
-            throw insertError;
-        }
+        if (insertError) throw insertError;
     }
 
     async function getFeedPosts() {
@@ -503,7 +460,7 @@
         return data || [];
     }
 
-    // ========== UI FUNCTIONS (tidak berubah) ==========
+    // ========== UI FUNCTIONS ==========
     function showAuthForm() {
         const app = document.getElementById('app');
         app.innerHTML = `
@@ -604,7 +561,6 @@
                 } catch (err) { 
                     alert("Upload gagal: " + err.message);
                     console.error(err);
-                    // Tampilkan instruksi perbaikan di console
                     console.log("Untuk memperbaiki error RLS, jalankan SQL berikut di Supabase SQL Editor:\nALTER TABLE posts DISABLE ROW LEVEL SECURITY;\nALTER TABLE stories DISABLE ROW LEVEL SECURITY;");
                 }
             }
