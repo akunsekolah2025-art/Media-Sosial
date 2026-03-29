@@ -6,7 +6,7 @@
     <title>ANPRATA - MediaSosial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ========== GLOBAL STYLES (SAMA SEPERTI SEBELUMNYA) ========== */
+        /* ========== STYLE SAMA SEPERTI SEBELUMNYA ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background-color: #fafafa; }
         .app-container { display: flex; min-height: 100vh; }
@@ -16,7 +16,7 @@
             padding: 1.5rem 1rem; z-index: 10;
         }
         .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
-        .logo i { font-size: 1.8rem; color: #262626; }
+        .logo i { font-size: 1.8rem; }
         .logo h1 { font-size: 1.3rem; font-weight: 600; }
         .nav-items { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
         .nav-item {
@@ -100,22 +100,10 @@
         .auth-switch { margin-top: 1rem; color: #0095f6; cursor: pointer; }
         .search-results-list { background: white; border-radius: 12px; margin-top: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .search-result-item { display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border-bottom: 1px solid #efefef; }
-        /* badge styles */
-        .badge-icon {
-            display: inline-flex;
-            align-items: center;
-            margin-left: 5px;
-            font-size: 0.9rem;
-        }
+        .badge-icon { display: inline-flex; align-items: center; margin-left: 5px; font-size: 0.9rem; }
         .badge-gold { color: #ffd700; }
         .badge-blue { color: #1da1f2; }
-        .admin-badge-btn {
-            background: #ffd700;
-            color: #262626;
-            margin-left: 10px;
-            font-size: 0.8rem;
-            padding: 2px 8px;
-        }
+        .admin-badge-btn { background: #ffd700; color: #262626; margin-left: 10px; font-size: 0.8rem; padding: 2px 8px; border-radius: 20px; }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0; max-width: 100%; padding: 1rem 1rem 80px 1rem; }
@@ -154,12 +142,13 @@
     async function ensureAdminAccount() {
         try {
             // Cek apakah admin sudah ada di tabel users
-            const { data: existingAdmin } = await supabaseClient
+            const { data: existingAdmin, error: checkError } = await supabaseClient
                 .from('users')
                 .select('*')
                 .eq('email', 'admin@gmail.com')
-                .single();
+                .maybeSingle();
             
+            if (checkError && checkError.code !== 'PGRST116') throw checkError;
             if (existingAdmin) {
                 console.log("Admin already exists");
                 return;
@@ -178,7 +167,7 @@
                 email: 'admin@gmail.com',
                 username: 'Admin',
                 bio: 'Administrator ANPRATA',
-                avatar_url: 'https://picsum.photos/id/100/200/200', // avatar khas
+                avatar_url: 'https://picsum.photos/id/100/200/200',
                 badge: 'gold'
             });
             if (insertError) throw insertError;
@@ -186,6 +175,37 @@
         } catch (error) {
             console.error("Admin creation error:", error);
         }
+    }
+
+    // ========== PERBAIKAN LOGIN: Jika user ada di Auth tapi belum di users, buat otomatis ==========
+    async function ensureUserProfile(userId, email, username) {
+        const { data: existing, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+        
+        if (error && error.code !== 'PGRST116') throw error;
+        if (existing) return existing; // sudah ada
+        
+        // Jika belum ada, buat profil baru
+        const newUsername = username || email.split('@')[0];
+        const avatarUrl = `https://picsum.photos/id/${Math.floor(Math.random() * 200)}/200/200`;
+        const { data: newProfile, error: insertError } = await supabaseClient
+            .from('users')
+            .insert({
+                id: userId,
+                email: email,
+                username: newUsername,
+                bio: '',
+                avatar_url: avatarUrl,
+                badge: null
+            })
+            .select()
+            .single();
+        if (insertError) throw insertError;
+        console.log(`Created missing profile for user ${userId}`);
+        return newProfile;
     }
 
     // ========== AUTH FUNCTIONS ==========
@@ -231,11 +251,9 @@
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) return null;
-            const { data: profile, error } = await supabaseClient.from('users').select('*').eq('id', user.id).single();
-            if (error) {
-                console.error("Error fetching user profile:", error);
-                return null;
-            }
+            
+            // Pastikan user ada di tabel users
+            const profile = await ensureUserProfile(user.id, user.email, user.user_metadata?.username);
             currentUser = profile;
             isAdmin = (currentUser.email === 'admin@gmail.com');
             return currentUser;
@@ -365,7 +383,6 @@
     async function giveBlueBadge(targetUserId) {
         if (!isAdmin) throw new Error("Unauthorized");
         await supabaseClient.from('users').update({ badge: 'blue' }).eq('id', targetUserId);
-        // refresh current view
         await renderCurrentView();
     }
 
@@ -410,7 +427,15 @@
     async function getActiveStories() {
         const cutoff = new Date();
         cutoff.setHours(cutoff.getHours() - 24);
-        const { data } = await supabaseClient.from('stories').select('*, users(username, avatar_url)').gte('created_at', cutoff.toISOString()).order('created_at', { ascending: false });
+        const { data, error } = await supabaseClient
+            .from('stories')
+            .select('*, users(username, avatar_url)')
+            .gte('created_at', cutoff.toISOString())
+            .order('created_at', { ascending: false });
+        if (error) {
+            console.error("Story fetch error:", error);
+            return [];
+        }
         return data || [];
     }
 
@@ -512,7 +537,7 @@
                     await createPost(file, caption);
                     document.getElementById('postModal').style.display = 'none';
                     renderCurrentView();
-                } catch (err) { alert("Upload gagal: " + err.message); }
+                } catch (err) { alert("Upload gagal: " + err.message); console.error(err); }
             }
         };
         document.getElementById('submitStoryBtn').onclick = async () => {
@@ -523,7 +548,7 @@
                     document.getElementById('storyModal').style.display = 'none';
                     alert('Story terupload!');
                     renderCurrentView();
-                } catch (err) { alert("Upload story gagal: " + err.message); }
+                } catch (err) { alert("Upload story gagal: " + err.message); console.error(err); }
             }
         };
         document.getElementById('searchInput').addEventListener('input', async (e) => {
