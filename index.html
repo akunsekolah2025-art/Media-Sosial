@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>MediaSosial - Supabase</title>
+    <title>ANPRATA - MediaSosial</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        /* ========== GLOBAL STYLES (SAMA SEPERTI SEBELUMNYA) ========== */
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui; }
         body { background-color: #fafafa; }
         .app-container { display: flex; min-height: 100vh; }
@@ -15,7 +16,7 @@
             padding: 1.5rem 1rem; z-index: 10;
         }
         .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 2rem; }
-        .logo i { font-size: 1.8rem; }
+        .logo i { font-size: 1.8rem; color: #262626; }
         .logo h1 { font-size: 1.3rem; font-weight: 600; }
         .nav-items { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
         .nav-item {
@@ -48,7 +49,10 @@
         .add-comment { display: flex; gap: 8px; margin-top: 10px; }
         .add-comment input { flex: 1; border: none; padding: 8px 0; outline: none; }
         .delete-post { margin-left: auto; background: none; border: none; color: #ed4956; cursor: pointer; }
-        .profile-header { background: white; border: 1px solid #dbdbdb; border-radius: 12px; padding: 2rem; display: flex; gap: 3rem; align-items: center; margin-bottom: 2rem; }
+        .profile-header {
+            background: white; border: 1px solid #dbdbdb; border-radius: 12px; padding: 2rem;
+            display: flex; gap: 3rem; align-items: center; margin-bottom: 2rem;
+        }
         .profile-avatar { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
         .profile-stats { display: flex; gap: 2rem; margin: 1rem 0; }
         .stat { text-align: center; }
@@ -96,6 +100,22 @@
         .auth-switch { margin-top: 1rem; color: #0095f6; cursor: pointer; }
         .search-results-list { background: white; border-radius: 12px; margin-top: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .search-result-item { display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border-bottom: 1px solid #efefef; }
+        /* badge styles */
+        .badge-icon {
+            display: inline-flex;
+            align-items: center;
+            margin-left: 5px;
+            font-size: 0.9rem;
+        }
+        .badge-gold { color: #ffd700; }
+        .badge-blue { color: #1da1f2; }
+        .admin-badge-btn {
+            background: #ffd700;
+            color: #262626;
+            margin-left: 10px;
+            font-size: 0.8rem;
+            padding: 2px 8px;
+        }
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .main-content { margin-left: 0; max-width: 100%; padding: 1rem 1rem 80px 1rem; }
@@ -128,6 +148,45 @@
     let currentView = 'beranda';
     let selectedChatUserId = null;
     let showSearchResults = false;
+    let isAdmin = false;
+
+    // ========== ADMIN ACCOUNT CREATION ==========
+    async function ensureAdminAccount() {
+        try {
+            // Cek apakah admin sudah ada di tabel users
+            const { data: existingAdmin } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('email', 'admin@gmail.com')
+                .single();
+            
+            if (existingAdmin) {
+                console.log("Admin already exists");
+                return;
+            }
+            
+            // Buat akun admin di auth
+            const { data: authData, error: signUpError } = await supabaseClient.auth.signUp({
+                email: 'admin@gmail.com',
+                password: '123456'
+            });
+            if (signUpError) throw signUpError;
+            
+            // Insert ke tabel users dengan badge gold
+            const { error: insertError } = await supabaseClient.from('users').insert({
+                id: authData.user.id,
+                email: 'admin@gmail.com',
+                username: 'Admin',
+                bio: 'Administrator ANPRATA',
+                avatar_url: 'https://picsum.photos/id/100/200/200', // avatar khas
+                badge: 'gold'
+            });
+            if (insertError) throw insertError;
+            console.log("Admin account created successfully");
+        } catch (error) {
+            console.error("Admin creation error:", error);
+        }
+    }
 
     // ========== AUTH FUNCTIONS ==========
     async function registerUser(email, password, username) {
@@ -140,12 +199,10 @@
                 email: email,
                 username: username,
                 avatar_url: avatarUrl,
-                bio: ''
+                bio: '',
+                badge: null
             });
-            if (insertError) {
-                console.error("Insert user error:", insertError);
-                throw new Error(`Gagal menyimpan data user: ${insertError.message}`);
-            }
+            if (insertError) throw insertError;
             return { success: true };
         } catch (error) {
             console.error("Register error:", error);
@@ -166,6 +223,7 @@
     async function logoutUser() {
         await supabaseClient.auth.signOut();
         currentUser = null;
+        isAdmin = false;
         showAuthForm();
     }
 
@@ -179,6 +237,7 @@
                 return null;
             }
             currentUser = profile;
+            isAdmin = (currentUser.email === 'admin@gmail.com');
             return currentUser;
         } catch (error) {
             console.error("Load user error:", error);
@@ -208,7 +267,7 @@
             followingIds.push(currentUser.id);
             const { data, error } = await supabaseClient
                 .from('posts')
-                .select('*, users(username, avatar_url)')
+                .select('*, users(username, avatar_url, badge)')
                 .in('user_id', followingIds)
                 .order('created_at', { ascending: false });
             if (error) throw error;
@@ -302,6 +361,21 @@
         currentUser.avatar_url = avatarUrl;
     }
 
+    // Admin: give blue badge to a user
+    async function giveBlueBadge(targetUserId) {
+        if (!isAdmin) throw new Error("Unauthorized");
+        await supabaseClient.from('users').update({ badge: 'blue' }).eq('id', targetUserId);
+        // refresh current view
+        await renderCurrentView();
+    }
+
+    async function removeBlueBadge(targetUserId) {
+        if (!isAdmin) throw new Error("Unauthorized");
+        await supabaseClient.from('users').update({ badge: null }).eq('id', targetUserId);
+        await renderCurrentView();
+    }
+
+    // Chat functions
     async function sendMessage(receiverId, text) {
         const chatRoomId = [currentUser.id, receiverId].sort().join('_');
         await supabaseClient.from('messages').insert({
@@ -326,7 +400,8 @@
 
     async function uploadStory(mediaFile) {
         const fileName = `stories/${Date.now()}_${mediaFile.name}`;
-        await supabaseClient.storage.from('media').upload(fileName, mediaFile);
+        const { error: uploadError } = await supabaseClient.storage.from('media').upload(fileName, mediaFile);
+        if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabaseClient.storage.from('media').getPublicUrl(fileName);
         const mediaType = mediaFile.type.startsWith('video') ? 'video' : 'image';
         await supabaseClient.from('stories').insert({ user_id: currentUser.id, media_url: publicUrl, media_type: mediaType });
@@ -345,7 +420,7 @@
         app.innerHTML = `
             <div class="auth-container">
                 <div class="auth-card">
-                    <h2><i class="fab fa-instagram"></i> MediaSosial</h2>
+                    <h2><i class="fab fa-instagram"></i> ANPRATA</h2>
                     <div id="authForm">
                         <input type="email" id="authEmail" placeholder="Email">
                         <input type="password" id="authPassword" placeholder="Password">
@@ -392,7 +467,7 @@
         app.innerHTML = `
             <div class="app-container">
                 <nav class="sidebar" id="desktopSidebar">
-                    <div class="logo"><i class="fab fa-instagram"></i><h1>MediaSosial</h1></div>
+                    <div class="logo"><i class="fab fa-instagram"></i><h1>ANPRATA</h1></div>
                     <div class="nav-items">
                         <div class="nav-item" data-nav="beranda"><i class="fas fa-home"></i><span>Beranda</span></div>
                         <div class="nav-item" data-nav="profile"><i class="fas fa-user-circle"></i><span>Profile</span></div>
@@ -443,10 +518,12 @@
         document.getElementById('submitStoryBtn').onclick = async () => {
             const file = document.getElementById('storyMedia').files[0];
             if (file) {
-                await uploadStory(file);
-                document.getElementById('storyModal').style.display = 'none';
-                alert('Story terupload!');
-                renderCurrentView();
+                try {
+                    await uploadStory(file);
+                    document.getElementById('storyModal').style.display = 'none';
+                    alert('Story terupload!');
+                    renderCurrentView();
+                } catch (err) { alert("Upload story gagal: " + err.message); }
             }
         };
         document.getElementById('searchInput').addEventListener('input', async (e) => {
@@ -504,11 +581,11 @@
         if (feedPosts.length === 0) html += `<div class="post-card" style="padding:2rem; text-align:center">Belum ada postingan. Ikuti akun lain atau buat postingan.</div>`;
         for (const post of feedPosts) {
             const owner = post.users;
-            const isLiked = (post.likes || []).includes(currentUser.id);
+            const badgeIcon = owner.badge === 'gold' ? '<i class="fas fa-star badge-icon badge-gold"></i>' : (owner.badge === 'blue' ? '<i class="fas fa-check-circle badge-icon badge-blue"></i>' : '');
             html += `<div class="post-card" data-postid="${post.id}">
                 <div class="post-header">
                     <img class="post-avatar" src="${owner.avatar_url}" onclick="viewProfile('${owner.id}')">
-                    <span class="post-username" onclick="viewProfile('${owner.id}')">${owner.username}</span>
+                    <span class="post-username" onclick="viewProfile('${owner.id}')">${owner.username} ${badgeIcon}</span>
                     <span class="post-time">${new Date(post.created_at).toLocaleString()}</span>
                     ${post.user_id === currentUser.id ? `<button class="delete-post" onclick="deletePostById('${post.id}')"><i class="fas fa-trash"></i></button>` : ''}
                 </div>
@@ -557,19 +634,27 @@
         const following = await isFollowing(profileUser.id);
         const followersCount = await getFollowersCount(profileUser.id);
         const followingCount = await getFollowingCount(profileUser.id);
+        const badgeIcon = profileUser.badge === 'gold' ? '<i class="fas fa-star badge-icon badge-gold"></i>' : (profileUser.badge === 'blue' ? '<i class="fas fa-check-circle badge-icon badge-blue"></i>' : '');
+        let adminButton = '';
+        if (isAdmin && !isOwn && profileUser.badge !== 'gold') {
+            if (profileUser.badge === 'blue') {
+                adminButton = `<button class="admin-badge-btn" onclick="removeBlueBadge('${profileUser.id}')"><i class="fas fa-times"></i> Hapus Lencana Biru</button>`;
+            } else {
+                adminButton = `<button class="admin-badge-btn" onclick="giveBlueBadge('${profileUser.id}')"><i class="fas fa-check-circle"></i> Beri Lencana Biru</button>`;
+            }
+        }
         container.innerHTML = `<div class="profile-container">
             <div class="profile-header">
                 <img class="profile-avatar" src="${profileUser.avatar_url}">
                 <div class="profile-info">
-                    <h2>${profileUser.username}
-                        ${isOwn ? '<button class="edit-profile-btn" id="editProfileBtn">Edit Profil</button> <button class="create-post-btn" id="createPostProfileBtn">+ Postingan</button>' : `<button class="follow-btn ${following ? 'following' : ''}" id="followBtn">${following ? 'Following' : 'Follow'}</button> <button class="chat-btn" id="chatDirectBtn">Chat</button>`}
-                    </h2>
+                    <h2>${profileUser.username} ${badgeIcon} ${adminButton}</h2>
                     <div class="profile-stats">
                         <div class="stat"><div class="stat-number">${userPosts.length}</div><div>Postingan</div></div>
                         <div class="stat"><div class="stat-number">${followersCount}</div><div>Followers</div></div>
                         <div class="stat"><div class="stat-number">${followingCount}</div><div>Following</div></div>
                     </div>
                     <div class="bio">${profileUser.bio || 'Tidak ada bio'}</div>
+                    ${isOwn ? '<button class="edit-profile-btn" id="editProfileBtn">Edit Profil</button> <button class="create-post-btn" id="createPostProfileBtn">+ Postingan</button>' : `<button class="follow-btn ${following ? 'following' : ''}" id="followBtn">${following ? 'Following' : 'Follow'}</button> <button class="chat-btn" id="chatDirectBtn">Chat</button>`}
                 </div>
             </div>
             <div class="post-grid" id="profilePostGrid"></div>
@@ -652,8 +737,12 @@
         if (newText) { await editComment(postId, commentId, newText); await renderCurrentView(); }
     };
 
+    window.giveBlueBadge = giveBlueBadge;
+    window.removeBlueBadge = removeBlueBadge;
+
     // ========== INIT ==========
     (async () => {
+        await ensureAdminAccount(); // buat admin jika belum ada
         const user = await loadCurrentUser();
         if (user) renderMainApp();
         else showAuthForm();
