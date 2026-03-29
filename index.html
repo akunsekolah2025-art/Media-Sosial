@@ -138,7 +138,29 @@
     let showSearchResults = false;
     let isAdmin = false;
 
-    // ========== ADMIN ACCOUNT CREATION ==========
+    // ========== FUNGSI RESET DATABASE (HAPUS SEMUA DATA) ==========
+    window.resetDatabase = async function() {
+        if (!confirm("⚠️ PERINGATAN: Ini akan menghapus SEMUA data (akun, postingan, story, follow, chat). Lanjutkan?")) return;
+        try {
+            // Hapus semua data dari tabel (gunakan kondisi yang selalu true)
+            await supabaseClient.from('posts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabaseClient.from('follows').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabaseClient.from('messages').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabaseClient.from('stories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            await supabaseClient.from('users').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            console.log("✅ Semua data telah dihapus.");
+            
+            // Logout user saat ini
+            await supabaseClient.auth.signOut();
+            alert("Database telah direset. Halaman akan dimuat ulang dan akun admin akan dibuat otomatis.");
+            location.reload();
+        } catch (err) {
+            console.error("Reset error:", err);
+            alert("Reset gagal: " + err.message + "\nPastikan RLS dinonaktifkan atau Anda memiliki izin delete.");
+        }
+    };
+
+    // ========== ADMIN ACCOUNT CREATION (dengan badge gold) ==========
     async function ensureAdminAccount() {
         try {
             // Cek apakah admin sudah ada di tabel users
@@ -263,11 +285,10 @@
         }
     }
 
-    // ========== DATABASE OPERATIONS ==========
+    // ========== DATABASE OPERATIONS (tidak berubah) ==========
     async function createPost(mediaFile, caption) {
         if (!currentUser) throw new Error("Not logged in");
         const fileName = `posts/${Date.now()}_${mediaFile.name}`;
-        // Upload ke bucket 'media'
         const { error: uploadError } = await supabaseClient.storage.from('media').upload(fileName, mediaFile);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = supabaseClient.storage.from('media').getPublicUrl(fileName);
@@ -440,7 +461,7 @@
         return data || [];
     }
 
-    // ========== UI FUNCTIONS ==========
+    // ========== UI FUNCTIONS (tidak berubah) ==========
     function showAuthForm() {
         const app = document.getElementById('app');
         app.innerHTML = `
